@@ -1,29 +1,50 @@
 {
   "expo": {
-    "name": "hifix-new",
-    "slug": "hifix-new",
+    "name": "HIFIX",
+    "slug": "hifix",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#2C2C2C"
     },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.hifix.app",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "HIFIX needs your location to find nearby service workers.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "HIFIX needs your location to show you nearby workers even when the app is in the background."
+      }
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#2C2C2C"
       },
-      "edgeToEdgeEnabled": true
+      "package": "com.hifix.app",
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION"
+      ]
     },
     "web": {
-      "favicon": "./assets/favicon.png"
-    }
+      "favicon": "./assets/favicon.jpg"
+    },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow HIFIX to use your location to find nearby service workers."
+        }
+      ],
+      "expo-font"
+    ]
   }
 }
