@@ -1,0 +1,30 @@
+# Build configuration for Render
+build:
+  env: node
+  buildCommand: npm install
+  startCommand: npm start
+
+# Environment variables - Set these in Render dashboard
+envVars:
+  - key: NODE_ENV
+    value: production
+  - key: PORT
+    sync: false
+  - key: DB_HOST
+    sync: false
+  - key: DB_USER
+    sync: false
+  - key: DB_PASSWORD
+    sync: false
+  - key: DB_NAME
+    sync: false
+  - key: JWT_SECRET
+    generateValue: true
+  - key: JWT_EXPIRE
+    value: 30d
+  - key: EMAIL_USER
+    sync: false
+  - key: EMAIL_PASSWORD
+    sync: false
+  - key: HOST
+    value: 0.0.0.0
