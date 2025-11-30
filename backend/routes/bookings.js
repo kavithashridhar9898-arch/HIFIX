@@ -138,7 +138,10 @@ router.post('/create', protect, isHomeowner, [
       ? Number.parseFloat(longitude)
       : null;
 
-    const bookingStatus = paymentStatus === 'paid' ? 'completed' : 'pending';
+    // If payment is via 'mock', treat even paid mock payments as a request
+    // that the worker must accept or decline. Only non-mock paid bookings
+    // are auto-completed.
+    const bookingStatus = (paymentStatus === 'paid' && paymentMethod !== 'mock') ? 'completed' : 'pending';
 
     // Verify worker exists
     const [workers] = await pool.query(
@@ -326,7 +329,9 @@ router.post('/', protect, isHomeowner, [
       ? Math.max(parsedPaymentAmount, 0)
       : (paymentStatus === 'paid' && Number.isFinite(parsedEstimatedPrice) ? Math.max(parsedEstimatedPrice, 0) : null);
 
-    const bookingStatus = paymentStatus === 'paid' ? 'completed' : 'pending';
+    // If payment is via 'mock', do not auto-complete bookings — leave them pending
+    // so the worker can accept/decline the request.
+    const bookingStatus = (paymentStatus === 'paid' && paymentMethod !== 'mock') ? 'completed' : 'pending';
 
     // Create booking
     const [result] = await pool.query(
@@ -699,58 +704,109 @@ router.post('/:id/pay', protect, isHomeowner, [
     const amountValue = Number.isFinite(amountInput) ? amountInput : fallbackAmount;
     const sanitizedAmount = Number.isFinite(amountValue) ? Math.max(amountValue, 0) : null;
 
-    await pool.query(
-      `UPDATE bookings 
-         SET payment_status = 'paid',
-             payment_method = ?,
-             payment_amount = ?,
-             status = 'completed',
-             completed_at = NOW(),
-             updated_at = NOW()
-       WHERE id = ?`,
-      [method, sanitizedAmount, bookingId]
-    );
+    // If payment method is mock, treat this as a paid request that still
+    // requires worker approval (do NOT auto-complete). For real methods,
+    // mark booking as completed.
+    let updatedBooking;
 
-    await pool.query(
-      'UPDATE workers SET availability_status = ? WHERE id = ?',
-      ['available', booking.worker_id]
-    );
+    if (method === 'mock') {
+      await pool.query(
+        `UPDATE bookings 
+           SET payment_status = 'paid',
+               payment_method = ?,
+               payment_amount = ?,
+               status = 'pending',
+               updated_at = NOW()
+         WHERE id = ?`,
+        [method, sanitizedAmount, bookingId]
+      );
 
-    const updatedBooking = await fetchBookingWithRelations(bookingId);
+      updatedBooking = await fetchBookingWithRelations(bookingId);
 
-    if (!updatedBooking) {
-      return res.status(500).json({ success: false, message: 'Failed to load booking after payment' });
+      if (!updatedBooking) {
+        return res.status(500).json({ success: false, message: 'Failed to load booking after payment' });
+      }
+
+      // Notify worker of approval request
+      await recordNotification(
+        req,
+        updatedBooking.worker_user_id,
+        'New Booking Request',
+        `You have a new approval request from ${updatedBooking.homeowner_name}.`,
+        'booking',
+        { bookingId }
+      );
+      await recordNotification(
+        req,
+        updatedBooking.homeowner_id,
+        'Request Sent',
+        `Your request has been sent to ${updatedBooking.worker_name} for approval.`,
+        'booking',
+        { bookingId }
+      );
+
+      await emitBookingEvent(req, updatedBooking.worker_user_id, 'new_booking', { bookingId, booking: updatedBooking });
+      await emitBookingEvent(req, updatedBooking.homeowner_id, 'booking_status_updated', { bookingId, status: 'pending', booking: updatedBooking });
+
+      res.json({
+        success: true,
+        message: 'Payment recorded. Request sent to worker for approval.',
+        booking: updatedBooking
+      });
+    } else {
+      await pool.query(
+        `UPDATE bookings 
+           SET payment_status = 'paid',
+               payment_method = ?,
+               payment_amount = ?,
+               status = 'completed',
+               completed_at = NOW(),
+               updated_at = NOW()
+         WHERE id = ?`,
+        [method, sanitizedAmount, bookingId]
+      );
+
+      await pool.query(
+        'UPDATE workers SET availability_status = ? WHERE id = ?',
+        ['available', booking.worker_id]
+      );
+
+      updatedBooking = await fetchBookingWithRelations(bookingId);
+
+      if (!updatedBooking) {
+        return res.status(500).json({ success: false, message: 'Failed to load booking after payment' });
+      }
+
+      const readableAmount = updatedBooking.payment_amount || updatedBooking.estimated_price || 0;
+      const amountDisplay = Number.isFinite(Number(readableAmount)) ? Number(readableAmount).toFixed(2) : readableAmount;
+      const methodLabel = method === 'mock' ? 'Mock Wallet' : method.toUpperCase();
+
+      await recordNotification(
+        req,
+        updatedBooking.worker_user_id,
+        'Work Completed',
+        `Payment of Rs.${amountDisplay} received via ${methodLabel} for ${updatedBooking.service_type || 'service'}.`,
+        'payment',
+        { bookingId }
+      );
+      await recordNotification(
+        req,
+        updatedBooking.homeowner_id,
+        'Payment Successful',
+        `Payment of Rs.${amountDisplay} to ${updatedBooking.worker_name} confirmed.`,
+        'payment',
+        { bookingId }
+      );
+
+      await emitBookingEvent(req, updatedBooking.worker_user_id, 'booking_completed', { bookingId, booking: updatedBooking });
+      await emitBookingEvent(req, updatedBooking.homeowner_id, 'booking_completed', { bookingId, booking: updatedBooking });
+
+      res.json({
+        success: true,
+        message: 'Booking marked as paid and completed',
+        booking: updatedBooking
+      });
     }
-
-    const readableAmount = updatedBooking.payment_amount || updatedBooking.estimated_price || 0;
-    const amountDisplay = Number.isFinite(Number(readableAmount)) ? Number(readableAmount).toFixed(2) : readableAmount;
-    const methodLabel = method === 'mock' ? 'Mock Wallet' : method.toUpperCase();
-
-    await recordNotification(
-      req,
-      updatedBooking.worker_user_id,
-      'Work Completed',
-      `Payment of Rs.${amountDisplay} received via ${methodLabel} for ${updatedBooking.service_type || 'service'}.`,
-      'payment',
-      { bookingId }
-    );
-    await recordNotification(
-      req,
-      updatedBooking.homeowner_id,
-      'Payment Successful',
-      `Payment of Rs.${amountDisplay} to ${updatedBooking.worker_name} confirmed.`,
-      'payment',
-      { bookingId }
-    );
-
-    await emitBookingEvent(req, updatedBooking.worker_user_id, 'booking_completed', { bookingId, booking: updatedBooking });
-    await emitBookingEvent(req, updatedBooking.homeowner_id, 'booking_completed', { bookingId, booking: updatedBooking });
-
-    res.json({
-      success: true,
-      message: 'Booking marked as paid and completed',
-      booking: updatedBooking
-    });
   } catch (error) {
     console.error('Booking payment error:', error);
     res.status(500).json({ success: false, message: 'Server error', error: error.message });

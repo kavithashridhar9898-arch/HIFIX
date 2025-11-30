@@ -95,13 +95,22 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 5000;
-const HOST = '0.0.0.0'; // Listen on all network interfaces
+// Prefer an explicitly provided HOST via env var, otherwise bind to the requested
+// static IP `192.168.138.251`. Setting HOST to `0.0.0.0` will keep previous
+// behavior (listen on all interfaces).
+const HOST = process.env.HOST || '192.168.138.251'; // default to requested IP
 
 initializeDatabase()
   .then(() => {
     server.listen(PORT, HOST, () => {
       console.log(`🚀 Server running on ${HOST}:${PORT}`);
-      console.log(`📱 Accessible at http://192.168.189.251:${PORT}`);
+      // If HOST is 0.0.0.0 we can't reliably know the external IP here —
+      // print instruction instead. Otherwise show the exact URL.
+      if (HOST === '0.0.0.0') {
+        console.log(`📱 Server bound to all interfaces. Use your machine's IP and port ${PORT}`);
+      } else {
+        console.log(`📱 Accessible at http://${HOST}:${PORT}`);
+      }
     });
   })
   .catch(err => {
