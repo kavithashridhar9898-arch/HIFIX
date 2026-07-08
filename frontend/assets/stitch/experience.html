@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Geist:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        :root {
+            --midnight: #101415;
+        }
+        body {
+            background-color: var(--midnight);
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .blueprint-grid {
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(1deg); }
+        }
+
+        .animate-float {
+            animation: float 8s ease-in-out infinite;
+        }
+
+        .animate-float-delayed {
+            animation: float 10s ease-in-out infinite reverse;
+            animation-delay: -3s;
+        }
+
+        .particle {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 200, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary-container": "#e1f2ff",
+                        "tertiary-fixed": "#c4e7ff",
+                        "surface-bright": "#363a3b",
+                        "on-tertiary-fixed": "#001e2c",
+                        "inverse-on-surface": "#2d3133",
+                        "on-surface": "#e0e3e5",
+                        "outline-variant": "#434655",
+                        "inverse-primary": "#0053db",
+                        "tertiary-container": "#00759f",
+                        "secondary-container": "#3f465c",
+                        "tertiary-fixed-dim": "#7bd0ff",
+                        "on-primary": "#002a78",
+                        "primary-container": "#2563eb",
+                        "error": "#ffb4ab",
+                        "surface-variant": "#323537",
+                        "on-secondary-fixed-variant": "#3f465c",
+                        "secondary-fixed-dim": "#bec6e0",
+                        "primary-fixed": "#dbe1ff",
+                        "on-surface-variant": "#c3c6d7",
+                        "primary": "#b4c5ff",
+                        "on-primary-container": "#eeefff",
+                        "on-secondary": "#283044",
+                        "surface-container-lowest": "#0b0f10",
+                        "on-primary-fixed": "#00174b",
+                        "on-primary-fixed-variant": "#003ea8",
+                        "secondary-fixed": "#dae2fd",
+                        "primary-fixed-dim": "#b4c5ff",
+                        "outline": "#8d90a0",
+                        "inverse-surface": "#e0e3e5",
+                        "surface-container-highest": "#323537",
+                        "surface-tint": "#b4c5ff",
+                        "tertiary": "#7bd0ff",
+                        "background": "#101415",
+                        "surface-container-low": "#191c1e",
+                        "on-tertiary": "#00354a",
+                        "surface-dim": "#101415",
+                        "surface-container": "#1d2022",
+                        "surface": "#101415",
+                        "error-container": "#93000a",
+                        "on-background": "#e0e3e5",
+                        "on-tertiary-fixed-variant": "#004c69",
+                        "on-secondary-container": "#adb4ce",
+                        "on-error-container": "#ffdad6",
+                        "surface-container-high": "#272a2c",
+                        "on-secondary-fixed": "#131b2e",
+                        "secondary": "#bec6e0",
+                        "on-error": "#690005"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "1rem",
+                        "lg": "2rem",
+                        "xl": "3rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "display-lg": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "title-md": ["Inter"],
+                        "label-sm": ["Geist"],
+                        "body-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.04em", "fontWeight": "700"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                        "title-md": ["20px", {"lineHeight": "28px", "fontWeight": "500"}],
+                        "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                        "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-background text-on-surface overflow-hidden">
+<!-- Hero Shader Background -->
+<div class="fixed inset-0 z-0">
+<!-- STITCH_SHADER_START:ANIMATION_1 class="absolute inset-0 w-full h-full" -->
+<div class="absolute inset-0 w-full h-full" style="display:block;">
+<canvas id="shader-canvas-ANIMATION_1" style="display:block;width:100%;height:100%"></canvas>
+<script>
+(function() {
+  const canvas = document.getElementById('shader-canvas-ANIMATION_1');
+
+  // Sync the WebGL drawing-buffer size with the CSS-driven layout size.
+  // This fires on initial layout and whenever the element is resized.
+  function syncSize() {
+    const w = canvas.clientWidth  || 1280;
+    const h = canvas.clientHeight || 720;
+    if (canvas.width !== w || canvas.height !== h) {
+      canvas.width  = w;
+      canvas.height = h;
+    }
+  }
+  if (typeof ResizeObserver !== 'undefined') {
+    new ResizeObserver(syncSize).observe(canvas);
+  }
+  syncSize();
+
+  const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+  if (!gl) return;
+  const vs = `attribute vec2 a_position;
+varying vec2 v_texCoord;
+void main() {
+  v_texCoord = a_position * 0.5 + 0.5;
+  gl_Position = vec4(a_position, 0.0, 1.0);
+}`;
+  const fs = `precision highp float;
+varying vec2 v_texCoord;
+uniform float u_time;
+uniform vec2 u_resolution;
+uniform vec2 u_mouse;
+
+// High-end Mesh Gradient with Organic Flow
+// Inspired by Apple and Stripe aesthetics
+
+vec3 palette(float t) {
+    vec3 a = vec3(0.05, 0.09, 0.16); // Deep Navy
+    vec3 b = vec3(0.15, 0.39, 0.92); // Royal Blue
+    vec3 c = vec3(0.22, 0.74, 0.97); // Electric Cyan
+    vec3 d = vec3(0.02, 0.04, 0.08); // Near Black
+    
+    return a + b*cos(6.28318*(c*t+d + u_time * 0.05));
+}
+
+float noise(vec2 p) {
+    return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
+}
+
+void main() {
+    vec2 uv = v_texCoord;
+    vec2 mouse = u_mouse / u_resolution;
+    
+    // Create organic movement
+    float t = u_time * 0.2;
+    vec2 p = uv * 2.0 - 1.0;
+    p.x *= u_resolution.x / u_resolution.y;
+    
+    // Wave distortions
+    for(float i = 1.0; i < 4.0; i++) {
+        p.x += 0.3 / i * sin(i * 3.0 * p.y + t + noise(vec2(i)) * 10.0);
+        p.y += 0.3 / i * cos(i * 3.0 * p.x + t + noise(vec2(i + 1.0)) * 10.0);
+    }
+    
+    // Color composition
+    float dist = length(p);
+    vec3 color = palette(dist * 0.2 + uv.y * 0.5);
+    
+    // Ambient light follows mouse
+    float mouseGlow = 1.0 - smoothstep(0.0, 0.8, length(uv - mouse));
+    color += vec3(0.22, 0.74, 0.97) * mouseGlow * 0.15;
+    
+    // Subtle grain for texture
+    float grain = (noise(uv + u_time) - 0.5) * 0.02;
+    color += grain;
+    
+    // Vignette
+    float vignette = smoothstep(1.5, 0.5, length(v_texCoord - 0.5));
+    color *= vignette;
+
+    gl_FragColor = vec4(color, 1.0);
+}`;
+  function cs(type, src) {
+    const s = gl.createShader(type);
+    gl.shaderSource(s, src);
+    gl.compileShader(s);
+    return s;
+  }
+  const prog = gl.createProgram();
+  gl.attachShader(prog, cs(gl.VERTEX_SHADER, vs));
+  gl.attachShader(prog, cs(gl.FRAGMENT_SHADER, fs));
+  gl.linkProgram(prog);
+  gl.useProgram(prog);
+  const buf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+  const pos = gl.getAttribLocation(prog, 'a_position');
+  gl.enableVertexAttribArray(pos);
+  gl.vertexAttribPointer(pos, 2, gl.FLOAT, false, 0, 0);
+  const uTime = gl.getUniformLocation(prog, 'u_time');
+  const uRes = gl.getUniformLocation(prog, 'u_resolution');
+  const uMouse = gl.getUniformLocation(prog, 'u_mouse');
+
+  // u_mouse is in pixel coordinates matching u_resolution (ShaderToy convention).
+  // Shaders that need normalized coords should use: u_mouse / u_resolution.
+  let mouse = { x: canvas.width / 2, y: canvas.height / 2 };
+  window.addEventListener('mousemove', (event) => {
+    const rect = canvas.getBoundingClientRect();
+    if (rect.width && rect.height) {
+      const nx = (event.clientX - rect.left) / rect.width;
+      const ny = 1.0 - (event.clientY - rect.top) / rect.height;
+      mouse.x = nx * canvas.width;
+      mouse.y = ny * canvas.height;
+    }
+  });
+
+  function render(t) {
+    if (typeof ResizeObserver === 'undefined') syncSize();
+    gl.viewport(0, 0, canvas.width, canvas.height);
+    if (uTime) gl.uniform1f(uTime, t * 0.001);
+    if (uRes) gl.uniform2f(uRes, canvas.width, canvas.height);
+    if (uMouse) gl.uniform2f(uMouse, mouse.x, mouse.y);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    requestAnimationFrame(render);
+  }
+  render(0);
+})();
+</script>
+</div>
+<!-- STITCH_SHADER_END:ANIMATION_1 -->
+</div>
+<!-- Blueprint Grid Layer -->
+<div class="fixed inset-0 z-10 blueprint-grid opacity-30"></div>
+<!-- Particle Layer -->
+<div class="fixed inset-0 z-20 pointer-events-none" id="particle-container"></div>
+<!-- Scattered Service Icons (Behind Glass) -->
+<div class="fixed inset-0 z-30 pointer-events-none">
+<span class="material-symbols-outlined absolute text-[120px] opacity-[0.03] blur-[2px] top-[15%] left-[10%] -rotate-12">handyman</span>
+<span class="material-symbols-outlined absolute text-[160px] opacity-[0.02] blur-[4px] bottom-[20%] right-[5%] rotate-45">bolt</span>
+<span class="material-symbols-outlined absolute text-[140px] opacity-[0.03] blur-[3px] top-[40%] right-[15%] -rotate-6">home</span>
+</div>
+<!-- Navigation Shell (Shared Component Mapping) -->
+<header class="fixed top-0 w-full z-50 backdrop-blur-xl border-b border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.3)]">
+<div class="flex items-center justify-between px-6 py-4 max-w-[1280px] mx-auto">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-2xl">grid_view</span>
+<span class="font-display-lg text-display-lg font-bold text-on-surface tracking-tight">HiFix</span>
+</div>
+<div class="w-10 h-10 rounded-full bg-surface-container border border-white/10 flex items-center justify-center overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A professional headshot of a modern homeowner or technician in a high-key studio setting, softly lit with cool blue tones and a premium aesthetic to match a luxury service app interface." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBLt-nCrrWykHMig_1LtoMgP4bf9MyzF5p94MIaqxUgNIED7eKb9UHkDk3BRAxGUeB-_9OhP-niDc9ZzcrF2njTT__7LnSK3GAcFGj25rWKBZrWm0Gb9QhPBKyWrHlI8-BLS66mcvLjsDM4Fq3-JEFlh4xR_yg8CT8F6AE5axrclj-geV67QYUjtxATkj9WJRz8Lrf2VHd2Ie6cRq7Qzp0JsXQyK3TDbp9aW-TGM0s-xOXXge-4AQik"/>
+</div>
+</div>
+</header>
+<!-- Floating Glass Panels -->
+<div class="relative z-40 h-screen flex items-center justify-center pointer-events-none">
+<!-- Center Wordmark Panel -->
+<div class="glass-panel p-12 md:p-20 rounded-xl text-center max-w-[90%] md:max-w-2xl animate-float pointer-events-auto">
+<h1 class="font-display-lg text-display-lg text-white mb-4 tracking-tighter">HiFix</h1>
+<p class="font-title-md text-title-md text-on-surface-variant/80">Modern Home Services. Reimagined.</p>
+<div class="mt-8 flex gap-4 justify-center">
+<button class="bg-primary-container text-white px-8 py-3 rounded-full font-label-sm text-label-sm uppercase tracking-widest active:scale-95 transition-all shadow-[0_0_20px_rgba(37,99,235,0.4)]">
+                    Explore Services
+                </button>
+</div>
+</div>
+<!-- Decorative Panels -->
+<div class="absolute top-[25%] left-[5%] glass-panel w-48 h-64 rounded-xl animate-float-delayed hidden md:block"></div>
+<div class="absolute bottom-[20%] right-[10%] glass-panel w-72 h-48 rounded-xl animate-float hidden md:block"></div>
+</div>
+<!-- Mobile Navigation Shell (Shared Component Mapping) -->
+<nav class="fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] rounded-full z-50 backdrop-blur-2xl border border-white/15 shadow-[0_8px_32px_rgba(0,0,0,0.5)] md:hidden">
+<div class="flex justify-around items-center p-3">
+<!-- Home (Active) -->
+<div class="flex flex-col items-center justify-center bg-primary-container/20 text-tertiary-fixed rounded-full px-4 py-2">
+<span class="material-symbols-outlined">home_app_logo</span>
+<span class="font-label-sm text-label-sm">Home</span>
+</div>
+<!-- Services -->
+<div class="flex flex-col items-center justify-center text-on-surface-variant/70 hover:text-on-surface transition-all">
+<span class="material-symbols-outlined">handyman</span>
+<span class="font-label-sm text-label-sm">Services</span>
+</div>
+<!-- Tracker -->
+<div class="flex flex-col items-center justify-center text-on-surface-variant/70 hover:text-on-surface transition-all">
+<span class="material-symbols-outlined">analytics</span>
+<span class="font-label-sm text-label-sm">Tracker</span>
+</div>
+<!-- Profile -->
+<div class="flex flex-col items-center justify-center text-on-surface-variant/70 hover:text-on-surface transition-all">
+<span class="material-symbols-outlined">person</span>
+<span class="font-label-sm text-label-sm">Profile</span>
+</div>
+</div>
+</nav>
+<!-- Particle Script -->
+<script>
+        const container = document.getElementById('particle-container');
+        const particleCount = 40;
+
+        for (let i = 0; i < particleCount; i++) {
+            const particle = document.createElement('div');
+            particle.className = 'particle';
+            
+            // Random properties
+            const size = Math.random() * 2 + 1;
+            const x = Math.random() * 100;
+            const y = Math.random() * 100;
+            const opacity = Math.random() * 0.1 + 0.05;
+            const duration = Math.random() * 20 + 20;
+            const delay = Math.random() * -20;
+
+            particle.style.width = `${size}px`;
+            particle.style.height = `${size}px`;
+            particle.style.left = `${x}%`;
+            particle.style.top = `${y}%`;
+            particle.style.opacity = opacity;
+            
+            // Subtle upward drift
+            particle.animate([
+                { transform: 'translateY(0)', opacity: opacity },
+                { transform: `translateY(-${Math.random() * 100 + 100}px)`, opacity: 0 }
+            ], {
+                duration: duration * 1000,
+                iterations: Infinity,
+                delay: delay * 1000,
+                easing: 'linear'
+            });
+
+            container.appendChild(particle);
+        }
+
+        // Click interaction for micro-feedback on buttons
+        document.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const ripple = document.createElement('div');
+                ripple.className = 'absolute rounded-full bg-white/20 pointer-events-none transform -translate-x-1/2 -translate-y-1/2';
+                ripple.style.width = '1px';
+                ripple.style.height = '1px';
+                ripple.style.left = e.offsetX + 'px';
+                ripple.style.top = e.offsetY + 'px';
+                btn.appendChild(ripple);
+                
+                ripple.animate([
+                    { transform: 'translate(-50%, -50%) scale(0)', opacity: 1 },
+                    { transform: 'translate(-50%, -50%) scale(100)', opacity: 0 }
+                ], { duration: 600, easing: 'ease-out' }).onfinish = () => ripple.remove();
+            });
+        });
+    </script>
+</body></html>
