@@ -14,11 +14,13 @@ import { useAuth } from '../context/AuthContext';
 import api from '../config/api';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { useTheme } from '../context/ThemeContext';
+import { useAlert } from '../context/AlertContext';
 import PremiumBackground from '../components/PremiumBackground';
 
 const ServiceRequestScreen = React.memo(function ServiceRequestScreen({ route, navigation }) {
   const { worker } = route.params;
   const { user } = useAuth();
+  const { showAlert } = useAlert();
   const { colors, isDarkMode } = useTheme();
   const [description, setDescription] = useState('');
   const [date, setDate] = useState(new Date());
@@ -27,7 +29,7 @@ const ServiceRequestScreen = React.memo(function ServiceRequestScreen({ route, n
 
   const handleRequestService = async () => {
     if (!description.trim()) {
-      Alert.alert('Error', 'Please provide a description of the service you need.');
+      showAlert('Description Required', 'Please provide a description of the service you need.', 'info');
       return;
     }
 
@@ -45,17 +47,18 @@ const ServiceRequestScreen = React.memo(function ServiceRequestScreen({ route, n
       const { data } = await api.post('/bookings/create', bookingData);
 
       if (data.success) {
-        Alert.alert(
-          'Request Sent',
-          'Your service request has been sent to the worker. You will be notified when they respond.',
-          [{ text: 'OK', onPress: () => navigation.goBack() }]
+        showAlert(
+          'Booking Confirmed',
+          'Your service request has been sent successfully! The worker will notify you soon.',
+          'success',
+          () => navigation.goBack()
         );
       } else {
-        Alert.alert('Error', data.message || 'Failed to send service request.');
+        showAlert('Booking Failed', data.message || 'We couldn\'t complete your booking. Please try again.', 'error');
       }
     } catch (error) {
       console.error('Service request error:', error);
-      Alert.alert('Error', 'An unexpected error occurred. Please try again later.');
+      showAlert('Booking Failed', 'We couldn\'t complete your booking due to a connection issue. Please try again.', 'error');
     } finally {
       setLoading(false);
     }

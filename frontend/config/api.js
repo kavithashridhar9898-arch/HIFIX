@@ -45,18 +45,27 @@ api.interceptors.response.use(
       originalRequest._retry = true;
       try {
         const refreshToken = await AsyncStorage.getItem('refreshToken');
+        if (!refreshToken) {
+          throw new Error('No refresh token available');
+        }
         const response = await axios.post(`${API_BASE_URL}/auth/refresh`, { refreshToken });
-        const { token } = response.data;
+        const { token, refreshToken: newRefreshToken } = response.data;
         
         await AsyncStorage.setItem('token', token);
+        if (newRefreshToken) {
+          await AsyncStorage.setItem('refreshToken', newRefreshToken);
+        }
         api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
         originalRequest.headers['Authorization'] = `Bearer ${token}`;
         
         return api(originalRequest);
       } catch (refreshError) {
-        // Handle refresh token failure (e.g., logout user)
+        // Handle refresh token failure
         console.error('Token refresh failed:', refreshError);
-        // Here you might trigger a logout action
+        await AsyncStorage.removeItem('token');
+        await AsyncStorage.removeItem('refreshToken');
+        await AsyncStorage.removeItem('user');
+        return Promise.reject(refreshError);
       }
     }
     return Promise.reject(error);

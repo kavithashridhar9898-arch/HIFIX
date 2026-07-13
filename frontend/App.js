@@ -15,6 +15,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { SocketProvider } from './context/SocketContext';
 import { NotificationProvider } from './context/NotificationContext';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
+import { AlertProvider } from './context/AlertContext';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -88,6 +89,7 @@ function AppNavigator() {
         <Stack.Screen name="Welcome" getComponent={() => require('./screens/WelcomeScreen').default} />
         <Stack.Screen name="Login" getComponent={() => require('./screens/LoginScreen').default} />
         <Stack.Screen name="Register" getComponent={() => require('./screens/RegisterScreen').default} />
+        <Stack.Screen name="ForgotPassword" getComponent={() => require('./screens/ForgotPasswordScreen').default} />
       </Stack.Navigator>
     );
   }
@@ -277,12 +279,14 @@ export default function App() {
         <SocketProvider>
           <NotificationProvider>
             <TabAnimationProvider>
-              <NavigationContainer>
-                <RootNavigator />
-                {isSplashVisible && (
-                  <VideoSplashScreen onFinish={() => setIsSplashVisible(false)} />
-                )}
-              </NavigationContainer>
+              <AlertProvider>
+                <NavigationContainer>
+                  <RootNavigator />
+                  {isSplashVisible && (
+                    <VideoSplashScreen onFinish={() => setIsSplashVisible(false)} />
+                  )}
+                </NavigationContainer>
+              </AlertProvider>
             </TabAnimationProvider>
           </NotificationProvider>
         </SocketProvider>

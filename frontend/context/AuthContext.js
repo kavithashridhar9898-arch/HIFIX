@@ -43,9 +43,10 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       const response = await api.post('/auth/login', { email, password });
-      const { token: newToken, user: userData } = response.data;
+      const { token: newToken, refreshToken: newRefreshToken, user: userData } = response.data;
       
       await AsyncStorage.setItem('token', newToken);
+      await AsyncStorage.setItem('refreshToken', newRefreshToken);
       await AsyncStorage.setItem('user', JSON.stringify(userData));
       
       setToken(newToken);
@@ -64,9 +65,10 @@ export const AuthProvider = ({ children }) => {
   const register = async (userData) => {
     try {
       const response = await api.post('/auth/register', userData);
-      const { token: newToken, user: registeredUser } = response.data;
+      const { token: newToken, refreshToken: newRefreshToken, user: registeredUser } = response.data;
       
       await AsyncStorage.setItem('token', newToken);
+      await AsyncStorage.setItem('refreshToken', newRefreshToken);
       await AsyncStorage.setItem('user', JSON.stringify(registeredUser));
       
       setToken(newToken);
@@ -85,6 +87,7 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     try {
       await AsyncStorage.removeItem('token');
+      await AsyncStorage.removeItem('refreshToken');
       await AsyncStorage.removeItem('user');
       setToken(null);
       setUser(null);
@@ -110,6 +113,46 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const loginWithGoogle = async (idToken, userType, serviceType) => {
+    try {
+      const response = await api.post('/auth/google', {
+        idToken,
+        user_type: userType,
+        service_type: serviceType
+      });
+      
+      if (response.data.success) {
+        const { token: newToken, refreshToken: newRefreshToken, user: userData } = response.data;
+        
+        await AsyncStorage.setItem('token', newToken);
+        await AsyncStorage.setItem('refreshToken', newRefreshToken);
+        await AsyncStorage.setItem('user', JSON.stringify(userData));
+        
+        setToken(newToken);
+        setUser(userData);
+        api.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
+        
+        return { success: true };
+      } else if (response.data.code === 'ROLE_REQUIRED') {
+        return {
+          success: false,
+          code: 'ROLE_REQUIRED',
+          googleProfile: response.data.googleProfile
+        };
+      } else {
+        return {
+          success: false,
+          message: response.data.message || 'Google login failed'
+        };
+      }
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Google authentication failed'
+      };
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -120,6 +163,7 @@ export const AuthProvider = ({ children }) => {
         register,
         logout,
         refreshProfile,
+        loginWithGoogle,
       }}
     >
       {children}

@@ -4,11 +4,13 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import { API_BASE_URL } from '../config/api';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
+import { useAlert } from '../context/AlertContext';
 import { api } from '../config/api';
 
 const WorkerCard = ({ worker, navigation, index }) => {
   const { colors, isDarkMode } = useTheme();
   const { user } = useAuth();
+  const { showAlert } = useAlert();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(50)).current;
   const [amount, setAmount] = useState('');
@@ -58,7 +60,7 @@ const WorkerCard = ({ worker, navigation, index }) => {
   const handleMessage = async () => {
     try {
       if (!user || user.user_type !== 'homeowner') {
-        Alert.alert('Messaging', 'Only homeowners can initiate chats.');
+        showAlert('Homeowners Only', 'Only homeowners can initiate chats with workers.', 'info');
         return;
       }
       if (!worker?.userId) {
@@ -74,11 +76,11 @@ const WorkerCard = ({ worker, navigation, index }) => {
           otherUserPhone: worker.phone,
         });
       } else {
-        Alert.alert('Error', 'Could not open conversation');
+        showAlert('Chat Error', 'We couldn\'t start a conversation right now.', 'error');
       }
     } catch (e) {
       console.error('WorkerCard message error:', e?.response?.data || e.message);
-      Alert.alert('Error', e?.response?.data?.message || 'Failed to start chat');
+      showAlert('Connection Error', e?.response?.data?.message || 'Failed to start chat. Please try again.', 'error');
     }
   };
 
@@ -86,8 +88,8 @@ const WorkerCard = ({ worker, navigation, index }) => {
     <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
       <View
         style={[styles.workerCard, { 
-          backgroundColor: isDarkMode ? 'rgba(255,255,255,0.55)' : 'rgba(255,255,255,0.85)', 
-          borderColor: isDarkMode ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.5)' 
+          backgroundColor: isDarkMode ? 'rgba(16,20,21,0.65)' : 'rgba(255,255,255,0.85)', 
+          borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.5)' 
         }]}
       >
         <TouchableOpacity style={styles.cardHeader} onPress={() => navigation.navigate('WorkerDetail', { workerId: worker.id })} activeOpacity={0.8}>
@@ -102,12 +104,12 @@ const WorkerCard = ({ worker, navigation, index }) => {
             </View>
           )}
           <View style={styles.headerText}>
-            <Text style={[styles.workerName, { color: '#000000' }]}>{worker.name}</Text>
-            <Text style={[styles.serviceType, { color: '#005bb5' }]}>
+            <Text style={[styles.workerName, { color: colors.text }]}>{worker.name}</Text>
+            <Text style={[styles.serviceType, { color: colors.primary }]}>
               {worker.serviceType?.charAt(0).toUpperCase() + worker.serviceType?.slice(1) || 'Service Provider'}
             </Text>
             {worker.experienceYears > 0 && (
-              <Text style={[styles.experience, { color: 'rgba(0,0,0,0.6)' }]}>{worker.experienceYears} years experience</Text>
+              <Text style={[styles.experience, { color: colors.textSecondary }]}>{worker.experienceYears} years experience</Text>
             )}
           </View>
           {!!worker.verified && (
@@ -118,7 +120,7 @@ const WorkerCard = ({ worker, navigation, index }) => {
         </TouchableOpacity>
         
         {!!worker.bio && (
-          <Text style={[styles.bio, { color: 'rgba(0,0,0,0.6)' }]} numberOfLines={2}>{worker.bio}</Text>
+          <Text style={[styles.bio, { color: colors.textSecondary }]} numberOfLines={2}>{worker.bio}</Text>
         )}
         
         <View style={[styles.cardBody, { borderTopColor: isDarkMode ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.05)' }]}>
@@ -126,9 +128,9 @@ const WorkerCard = ({ worker, navigation, index }) => {
             <View style={styles.stars}>
               {renderStars(Math.round(worker.averageRating || 0))}
             </View>
-            <Text style={[styles.ratingText, { color: '#000000' }]}>
+            <Text style={[styles.ratingText, { color: colors.text }]}>
               {(worker.averageRating || 0).toFixed(1)} 
-              <Text style={{ color: 'rgba(0,0,0,0.6)' }}> ({worker.totalJobs || 0} jobs)</Text>
+              <Text style={{ color: colors.textSecondary }}> ({worker.totalJobs || 0} jobs)</Text>
             </Text>
           </View>
           {!!worker.distance && (
@@ -141,9 +143,9 @@ const WorkerCard = ({ worker, navigation, index }) => {
         
         <View style={[styles.cardFooter, { borderTopColor: isDarkMode ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.05)' }]}>
           <View style={styles.priceContainer}>
-            <Text style={[styles.hourlyRate, { color: '#059669' }]}>${(worker.hourlyRate || 0).toFixed(2)}<Text style={{fontSize:14, color: 'rgba(0,0,0,0.6)'}}>/hr</Text></Text>
+            <Text style={[styles.hourlyRate, { color: isDarkMode ? '#10B981' : '#059669' }]}>${(worker.hourlyRate || 0).toFixed(2)}<Text style={{fontSize:14, color: colors.textSecondary}}>/hr</Text></Text>
             {!!worker.minCharge && (
-              <Text style={[styles.minCharge, { color: 'rgba(0,0,0,0.6)' }]}>Min: ${worker.minCharge.toFixed(2)}</Text>
+              <Text style={[styles.minCharge, { color: colors.textSecondary }]}>Min: ${worker.minCharge.toFixed(2)}</Text>
             )}
           </View>
           
@@ -151,11 +153,11 @@ const WorkerCard = ({ worker, navigation, index }) => {
             <View style={styles.footerTopRow}>
               {user?.user_type === 'homeowner' && (
                 <TouchableOpacity 
-                  style={[styles.actionButton, styles.messageButton, { flex: 1, backgroundColor: 'rgba(0,0,0,0.06)', borderColor: 'rgba(0,0,0,0.05)' }]} 
+                  style={[styles.actionButton, styles.messageButton, { flex: 1, backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)', borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]} 
                   onPress={handleMessage}
                 >
-                  <Icon name="chat" size={16} color="#000000" style={styles.btnIcon} />
-                  <Text style={[styles.messageButtonText, { color: '#000000' }]}>Message</Text>
+                  <Icon name="chat" size={16} color={colors.text} style={styles.btnIcon} />
+                  <Text style={[styles.messageButtonText, { color: colors.text }]}>Message</Text>
                 </TouchableOpacity>
               )}
               <TouchableOpacity 
@@ -172,12 +174,12 @@ const WorkerCard = ({ worker, navigation, index }) => {
                 <TextInput
                   style={[styles.amountInput, { 
                     flex: 1,
-                    backgroundColor: 'rgba(255,255,255,0.8)', 
-                    color: '#0F172A', 
-                    borderColor: 'rgba(0,0,0,0.1)' 
+                    backgroundColor: colors.surface, 
+                    color: colors.text, 
+                    borderColor: colors.border 
                   }]}
                   placeholder="Enter Amount"
-                  placeholderTextColor="rgba(16,20,21,0.4)"
+                  placeholderTextColor={colors.textSecondary}
                   value={amount}
                   onChangeText={setAmount}
                   keyboardType="numeric"
@@ -188,7 +190,7 @@ const WorkerCard = ({ worker, navigation, index }) => {
                   disabled={paying}
                   onPress={async () => {
                     if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
-                      Alert.alert('Error', 'Please enter a valid amount');
+                      showAlert('Invalid Amount', 'Please enter a valid payment amount.', 'info');
                       return;
                     }
                     setPaying(true);
@@ -204,14 +206,14 @@ const WorkerCard = ({ worker, navigation, index }) => {
                       };
                       const response = await api.post('/bookings/create', bookingDetails);
                       if (response.data.success) {
-                        Alert.alert('Payment Success', 'Booking created! You can now leave a review in Bookings tab.');
+                        showAlert('Payment Successful', 'Booking created! You can now leave a review in Bookings tab.', 'success');
                         setAmount('');
                         navigation.navigate('Bookings');
                       } else {
-                        Alert.alert('Error', response.data.message || 'Failed to create booking');
+                        showAlert('Payment Failed', response.data.message || 'We couldn\'t process your payment.', 'error');
                       }
                     } catch (error) {
-                      Alert.alert('Error', error.response?.data?.message || 'Failed to create booking');
+                      showAlert('Payment Failed', error.response?.data?.message || 'We couldn\'t connect to the server.', 'error');
                     } finally {
                       setPaying(false);
                     }

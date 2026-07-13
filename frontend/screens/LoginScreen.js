@@ -13,14 +13,19 @@ import {
   ScrollView,
   Animated,
   Dimensions,
+  Modal,
+  Image,
 } from 'react-native';
 import { Video, ResizeMode } from 'expo-av';
 import { useAuth } from '../context/AuthContext';
+import { useAlert } from '../context/AlertContext';
 import Logo from '../components/Logo';
 import * as LocalAuthentication from 'expo-local-authentication';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useTheme } from '../context/ThemeContext';
+import { Picker } from '@react-native-picker/picker';
+import { signInWithGoogle } from '../config/googleAuth';
 
 const { width, height } = Dimensions.get('window');
 
@@ -34,11 +39,16 @@ try {
 }
 
 const LoginScreen = React.memo(function LoginScreen({ navigation }) {
-  const { login } = useAuth();
-  const { colors } = useTheme();
+  const { login, loginWithGoogle } = useAuth();
+  const { showAlert } = useAlert();
+  const { colors, isDarkMode } = useTheme();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [roleModalVisible, setRoleModalVisible] = useState(false);
+  const [googleToken, setGoogleToken] = useState('');
+  const [selectedRole, setSelectedRole] = useState('homeowner');
+  const [selectedServiceType, setSelectedServiceType] = useState('painter');
   const [emailFocused, setEmailFocused] = useState(false);
   const [passwordFocused, setPasswordFocused] = useState(false);
   const [biometricAvailable, setBiometricAvailable] = useState(false);
@@ -83,17 +93,17 @@ const LoginScreen = React.memo(function LoginScreen({ navigation }) {
           try {
             await login(savedEmail, savedPassword);
           } catch (error) {
-            Alert.alert('Login Failed', 'Biometric authentication succeeded but login failed. Please try manual login.');
+            showAlert('Login Failed', 'Biometric authentication succeeded but login failed. Please try manual login.', 'error');
           } finally {
             setLoading(false);
           }
         } else {
-          Alert.alert('Error', 'No saved credentials found. Please login manually first.');
+          showAlert('Credentials Not Found', 'No saved credentials found. Please login manually first.', 'info');
         }
       }
     } catch (error) {
       console.error('Biometric login error:', error);
-      Alert.alert('Error', 'Biometric authentication failed');
+      showAlert('Authentication Failed', 'Biometric authentication failed. Please try again.', 'error');
     }
   };
   
@@ -168,7 +178,7 @@ const LoginScreen = React.memo(function LoginScreen({ navigation }) {
           useNativeDriver: true,
         }),
       ]).start();
-      Alert.alert('Error', 'Please fill in all fields');
+      showAlert('Email and Password Required', 'Please fill in both email and password to sign in.', 'info');
       return;
     }
 
@@ -199,14 +209,84 @@ const LoginScreen = React.memo(function LoginScreen({ navigation }) {
           await AsyncStorage.setItem('userPassword', password);
         }
       } else {
-        Alert.alert('Login Failed', result.message || 'Unable to connect to server. Please check your connection.');
+        showAlert('Login Failed', result.message || 'The credentials you entered are incorrect.', 'error');
       }
     } catch (error) {
       console.error('Login error:', error);
-      Alert.alert(
+      showAlert(
         'Connection Error',
-        'Unable to connect to the server. Please make sure:\n\n• Backend server is running\n• You are using the correct IP address\n• Both devices are on the same network'
+        'We couldn\'t connect to our servers. Please check your internet connection and try again.',
+        'error'
       );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    setLoading(true);
+    try {
+      const showMockAlert = (callback) => {
+        Alert.alert(
+          'Google Sign-In (Expo Go Mock)',
+          'Select a mock Google account:',
+          [
+            {
+              text: 'Existing User (John Doe - Homeowner)',
+              onPress: () => callback('mock_token_john_doe'),
+            },
+            {
+              text: 'New User (Alice - Homeowner/Worker)',
+              onPress: () => callback('mock_token_alice_smith'),
+            },
+            {
+              text: 'Cancel',
+              onPress: () => callback(null),
+              style: 'cancel',
+            },
+          ],
+          { cancelable: true }
+        );
+      };
+
+      const { idToken } = await signInWithGoogle(showMockAlert);
+      
+      const result = await loginWithGoogle(idToken);
+
+      if (result.success) {
+        // Logged in successfully
+      } else if (result.code === 'ROLE_REQUIRED') {
+        setGoogleToken(idToken);
+        setRoleModalVisible(true);
+      } else {
+        showAlert('Authentication Failed', result.message || 'Could not verify with Google.', 'error');
+      }
+    } catch (error) {
+      if (error.message !== 'User cancelled sign-in') {
+        showAlert('Error', error.message || 'An error occurred during Google sign-in.', 'error');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleRegistrationSubmit = async () => {
+    setRoleModalVisible(false);
+    setLoading(true);
+    try {
+      const result = await loginWithGoogle(
+        googleToken,
+        selectedRole,
+        selectedRole === 'worker' ? selectedServiceType : null
+      );
+
+      if (result.success) {
+        // Logged in successfully
+      } else {
+        showAlert('Registration Failed', result.message || 'Could not complete registration.', 'error');
+      }
+    } catch (error) {
+      showAlert('Error', error.message || 'An error occurred during registration.', 'error');
     } finally {
       setLoading(false);
     }
@@ -270,12 +350,14 @@ const LoginScreen = React.memo(function LoginScreen({ navigation }) {
             },
           ]}
         >
-          <Text style={[styles.title, { color: colors.text }]}>Welcome Back</Text>
-          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Sign in to continue</Text>
+          <Text style={[styles.title, { color: '#FFFFFF' }]}>Welcome Back</Text>
+          <Text style={[styles.subtitle, { color: 'rgba(255, 255, 255, 0.8)' }]}>Sign in to continue</Text>
         </Animated.View>          <Animated.View
             style={[
               styles.form,
               {
+                backgroundColor: isDarkMode ? 'rgba(44, 44, 44, 0.85)' : 'rgba(255, 255, 255, 0.9)',
+                borderColor: isDarkMode ? 'rgba(66, 133, 244, 0.2)' : 'rgba(0, 0, 0, 0.1)',
                 opacity: fadeAnim,
                 transform: [{ scale: scaleAnim }, { translateY: slideAnim }],
               },
@@ -344,6 +426,12 @@ const LoginScreen = React.memo(function LoginScreen({ navigation }) {
               </Animated.View>
             </View>
 
+            <View style={styles.forgotPasswordContainer}>
+              <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
+                <Text style={[styles.forgotPasswordText, { color: colors.primary }]}>Forgot Password?</Text>
+              </TouchableOpacity>
+            </View>
+
             <Animated.View
               style={{
                 transform: [{ scale: buttonScale }],
@@ -365,6 +453,34 @@ const LoginScreen = React.memo(function LoginScreen({ navigation }) {
               </TouchableOpacity>
             </Animated.View>
 
+            <Animated.View style={{ opacity: fadeAnim }}>
+              <View style={styles.divider}>
+                <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+                <Text style={[styles.dividerText, { color: colors.textSecondary }]}>OR</Text>
+                <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+              </View>
+
+              <TouchableOpacity
+                style={[
+                  styles.googleButton,
+                  {
+                    backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.08)' : '#FFFFFF',
+                    borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.15)' : '#E0E0E0',
+                  }
+                ]}
+                onPress={handleGoogleLogin}
+                disabled={loading}
+              >
+                <Image
+                  source={{ uri: 'https://developers.google.com/identity/images/g-logo.png' }}
+                  style={styles.googleIcon}
+                />
+                <Text style={[styles.googleButtonText, { color: isDarkMode ? '#FFFFFF' : '#333333' }]}>
+                  Continue with Google
+                </Text>
+              </TouchableOpacity>
+            </Animated.View>
+
             {biometricAvailable && (
               <Animated.View
                 style={[
@@ -374,13 +490,8 @@ const LoginScreen = React.memo(function LoginScreen({ navigation }) {
                   },
                 ]}
               >
-                <View style={styles.divider}>
-                  <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-                  <Text style={[styles.dividerText, { color: colors.textSecondary }]}>OR</Text>
-                  <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-                </View>
                 <TouchableOpacity
-                  style={[styles.biometricButton, { backgroundColor: `${colors.primary}10`, borderColor: `${colors.primary}30` }]}
+                  style={[styles.biometricButton, { backgroundColor: `${colors.primary}10`, borderColor: `${colors.primary}30`, marginTop: 15 }]}
                   onPress={handleBiometricLogin}
                   disabled={loading}
                 >
@@ -406,6 +517,94 @@ const LoginScreen = React.memo(function LoginScreen({ navigation }) {
           </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* Role Selection Modal for Google Auth */}
+      <Modal
+        visible={roleModalVisible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setRoleModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[
+            styles.modalContent,
+            {
+              backgroundColor: isDarkMode ? '#1E2224' : '#FFFFFF',
+              borderColor: colors.border
+            }
+          ]}>
+            <Text style={[styles.modalTitle, { color: colors.text }]}>Choose Account Type</Text>
+            <Text style={[styles.modalSubtitle, { color: colors.textSecondary }]}>
+              To complete your registration, please select whether you are a Homeowner or a Service Worker.
+            </Text>
+
+            <View style={styles.roleSelectionContainer}>
+              <TouchableOpacity
+                style={[
+                  styles.roleButton,
+                  selectedRole === 'homeowner' && { backgroundColor: colors.primary, borderColor: colors.primary }
+                ]}
+                onPress={() => setSelectedRole('homeowner')}
+              >
+                <Icon name="home" size={28} color={selectedRole === 'homeowner' ? '#FFF' : colors.text} />
+                <Text style={[styles.roleButtonText, { color: selectedRole === 'homeowner' ? '#FFF' : colors.text }]}>
+                  Homeowner
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.roleButton,
+                  selectedRole === 'worker' && { backgroundColor: colors.primary, borderColor: colors.primary }
+                ]}
+                onPress={() => setSelectedRole('worker')}
+              >
+                <Icon name="construction" size={28} color={selectedRole === 'worker' ? '#FFF' : colors.text} />
+                <Text style={[styles.roleButtonText, { color: selectedRole === 'worker' ? '#FFF' : colors.text }]}>
+                  Service Worker
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {selectedRole === 'worker' && (
+              <View style={styles.pickerWrapper}>
+                <Text style={[styles.pickerLabel, { color: colors.text }]}>Select Service Type</Text>
+                <View style={[styles.pickerContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                  <Picker
+                    selectedValue={selectedServiceType}
+                    onValueChange={(itemValue) => setSelectedServiceType(itemValue)}
+                    style={{ color: colors.text }}
+                    dropdownIconColor={colors.text}
+                  >
+                    <Picker.Item label="Painter" value="painter" />
+                    <Picker.Item label="Electrician" value="electrician" />
+                    <Picker.Item label="Plumber" value="plumber" />
+                    <Picker.Item label="Carpenter" value="carpenter" />
+                    <Picker.Item label="Handyman" value="handyman" />
+                    <Picker.Item label="HVAC" value="hvac" />
+                  </Picker>
+                </View>
+              </View>
+            )}
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={[styles.modalCancelButton, { borderColor: colors.border }]}
+                onPress={() => setRoleModalVisible(false)}
+              >
+                <Text style={[styles.modalCancelButtonText, { color: colors.text }]}>Cancel</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.modalSubmitButton, { backgroundColor: colors.primary }]}
+                onPress={handleGoogleRegistrationSubmit}
+              >
+                <Text style={styles.modalSubmitButtonText}>Submit</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 });
@@ -544,6 +743,15 @@ const styles = StyleSheet.create({
     padding: 15,
     fontSize: 16,
   },
+  forgotPasswordContainer: {
+    alignItems: 'flex-end',
+    marginTop: 4,
+    marginBottom: 12,
+  },
+  forgotPasswordText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
   button: {
     paddingVertical: 16,
     borderRadius: 12,
@@ -610,5 +818,120 @@ const styles = StyleSheet.create({
   footerLink: {
     fontSize: 14,
     fontWeight: '600',
+  },
+  googleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    borderRadius: 12,
+    marginTop: 10,
+    borderWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  googleIcon: {
+    width: 20,
+    height: 20,
+    marginRight: 12,
+    resizeMode: 'contain',
+  },
+  googleButtonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    width: '100%',
+    maxWidth: 400,
+    borderRadius: 24,
+    padding: 25,
+    borderWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.25,
+    shadowRadius: 15,
+    elevation: 10,
+  },
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: 20,
+    lineHeight: 20,
+  },
+  roleSelectionContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  roleButton: {
+    flex: 1,
+    paddingVertical: 15,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    alignItems: 'center',
+    marginHorizontal: 5,
+  },
+  roleButtonText: {
+    marginTop: 8,
+    fontWeight: '600',
+  },
+  pickerWrapper: {
+    marginBottom: 20,
+  },
+  pickerLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  pickerContainer: {
+    borderRadius: 12,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  modalActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 10,
+  },
+  modalCancelButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+    marginRight: 10,
+  },
+  modalCancelButtonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  modalSubmitButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginLeft: 10,
+  },
+  modalSubmitButtonText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });

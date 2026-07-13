@@ -1,6 +1,7 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const axios = require('axios');
 const pool = require('../config/database');
 const { body, validationResult } = require('express-validator');
 const multer = require('multer');
@@ -11,6 +12,7 @@ const router = express.Router();
 
 // Store OTPs temporarily (in production, use Redis or database)
 const otpStore = new Map();
+const forgotPasswordOtpStore = new Map();
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({
@@ -44,10 +46,17 @@ const upload = multer({
   }
 });
 
-// Generate JWT Token
+// Generate JWT Token (Access Token)
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRE || '30d'
+    expiresIn: process.env.JWT_EXPIRE || '15m'
+  });
+};
+
+// Generate Refresh Token
+const generateRefreshToken = (id) => {
+  return jwt.sign({ id }, process.env.REFRESH_TOKEN_SECRET || process.env.JWT_SECRET, {
+    expiresIn: '7d'
   });
 };
 
@@ -112,11 +121,13 @@ router.post('/register', [
     );
 
     const token = generateToken(userId);
+    const refreshToken = generateRefreshToken(userId);
 
     res.status(201).json({
       success: true,
       message: 'User registered successfully',
       token,
+      refreshToken,
       user: users[0]
     });
   } catch (error) {
@@ -175,11 +186,13 @@ router.post('/login', [
     delete user.password;
 
     const token = generateToken(user.id);
+    const refreshToken = generateRefreshToken(user.id);
 
     res.json({
       success: true,
       message: 'Login successful',
       token,
+      refreshToken,
       user: {
         id: user.id,
         name: user.name,
@@ -588,5 +601,352 @@ router.put('/profile',
   }
 );
 
-module.exports = router;
+// @route   POST /api/auth/forgot-password
+// @desc    Request OTP for forgot password
+// @access  Public
+router.post('/forgot-password', [
+  body('email').isEmail().withMessage('Please provide a valid email')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ success: false, errors: errors.array() });
+    }
 
+    const { email } = req.body;
+    const [users] = await pool.query('SELECT id, name, email FROM users WHERE email = ?', [email]);
+
+    if (users.length === 0) {
+      // Return success even if user not found to prevent email enumeration
+      return res.json({ success: true, message: 'If an account exists, an OTP has been sent.' });
+    }
+
+    const user = users[0];
+
+    // Check rate limit (60 seconds)
+    const existingOtp = forgotPasswordOtpStore.get(email);
+    if (existingOtp && Date.now() - existingOtp.lastSentAt < 60000) {
+      return res.status(429).json({ success: false, message: 'Please wait 60 seconds before requesting another OTP.' });
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    
+    forgotPasswordOtpStore.set(email, {
+      otp,
+      userId: user.id,
+      expiresAt: Date.now() + 5 * 60 * 1000, // 5 minutes
+      attempts: 0,
+      lastSentAt: Date.now(),
+      verified: false
+    });
+
+    const emailResult = await sendOTPEmail(user.email, otp, user.name);
+
+    if (!emailResult.success) {
+      return res.json({
+        success: true,
+        message: 'OTP generated. Email not configured - check server console for OTP.',
+        emailSent: false,
+        otp: otp
+      });
+    }
+
+    res.json({ success: true, emailSent: true, message: 'OTP sent to your email successfully.' });
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    res.status(500).json({ success: false, message: 'Server error generating OTP' });
+  }
+});
+
+// @route   POST /api/auth/verify-forgot-password-otp
+// @desc    Verify OTP for forgot password
+// @access  Public
+router.post('/verify-forgot-password-otp', [
+  body('email').isEmail(),
+  body('otp').notEmpty()
+], async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+    const otpData = forgotPasswordOtpStore.get(email);
+
+    if (!otpData) {
+      return res.status(400).json({ success: false, message: 'No active password reset request found.' });
+    }
+
+    if (Date.now() > otpData.expiresAt) {
+      forgotPasswordOtpStore.delete(email);
+      return res.status(400).json({ success: false, message: 'OTP has expired. Please request a new one.' });
+    }
+
+    if (otpData.attempts >= 5) {
+      forgotPasswordOtpStore.delete(email);
+      return res.status(400).json({ success: false, message: 'Too many failed attempts. Please request a new OTP.' });
+    }
+
+    if (otpData.otp !== otp.toString()) {
+      otpData.attempts += 1;
+      forgotPasswordOtpStore.set(email, otpData);
+      return res.status(400).json({ success: false, message: `Invalid OTP. ${5 - otpData.attempts} attempts remaining.` });
+    }
+
+    otpData.verified = true;
+    forgotPasswordOtpStore.set(email, otpData);
+
+    res.json({ success: true, message: 'OTP verified successfully.' });
+  } catch (error) {
+    console.error('Verify OTP error:', error);
+    res.status(500).json({ success: false, message: 'Server error verifying OTP' });
+  }
+});
+
+// @route   POST /api/auth/reset-password
+// @desc    Reset password after OTP verification
+// @access  Public
+router.post('/reset-password', [
+  body('email').isEmail(),
+  body('password').isLength({ min: 6 })
+], async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const otpData = forgotPasswordOtpStore.get(email);
+
+    if (!otpData || !otpData.verified) {
+      return res.status(400).json({ success: false, message: 'Please verify OTP first.' });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    await pool.query('UPDATE users SET password = ? WHERE id = ?', [hashedPassword, otpData.userId]);
+
+    forgotPasswordOtpStore.delete(email);
+
+    res.json({ success: true, message: 'Password has been reset successfully. You can now log in.' });
+  } catch (error) {
+    console.error('Reset password error:', error);
+    res.status(500).json({ success: false, message: 'Server error resetting password' });
+  }
+});
+
+// Verify Google Token Helper
+const verifyGoogleToken = async (idToken) => {
+  try {
+    // If it's a dev/mock token, return mock profile details
+    if (process.env.NODE_ENV === 'development' && idToken.startsWith('mock_token_')) {
+      const mockEmail = idToken.replace('mock_token_', '') + '@example.com';
+      const mockName = idToken.replace('mock_token_', '').split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+      return {
+        sub: `mock_google_id_${idToken}`,
+        email: mockEmail,
+        name: mockName,
+        picture: 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y'
+      };
+    }
+
+    const response = await axios.get(`https://oauth2.googleapis.com/tokeninfo?id_token=${idToken}`);
+    const payload = response.data;
+    
+    if (payload.iss !== 'https://accounts.google.com' && payload.iss !== 'accounts.google.com') {
+      throw new Error('Invalid token issuer');
+    }
+    
+    return {
+      sub: payload.sub,
+      email: payload.email,
+      name: payload.name,
+      picture: payload.picture
+    };
+  } catch (error) {
+    console.error('Google token verification failed:', error.message);
+    throw new Error('Invalid Google token');
+  }
+};
+
+// @route   POST /api/auth/google
+// @desc    Authenticate with Google (Login or Auto-Register)
+// @access  Public
+router.post('/google', async (req, res) => {
+  try {
+    const { idToken, user_type, service_type } = req.body;
+
+    if (!idToken) {
+      return res.status(400).json({
+        success: false,
+        message: 'Google ID token is required'
+      });
+    }
+
+    // 1. Verify Google Token
+    let googleProfile;
+    try {
+      googleProfile = await verifyGoogleToken(idToken);
+    } catch (err) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid Google token',
+        error: err.message
+      });
+    }
+
+    const { sub: googleId, name, email, picture } = googleProfile;
+
+    // 2. Check if user exists by google_id
+    let [users] = await pool.query(
+      'SELECT id, name, email, phone, user_type, profile_image FROM users WHERE google_id = ?',
+      [googleId]
+    );
+
+    let user;
+
+    if (users.length > 0) {
+      // User exists with this Google account -> Log in
+      user = users[0];
+    } else {
+      // 3. Check if user exists with the same email
+      let [existingEmailUsers] = await pool.query(
+        'SELECT id, name, email, phone, user_type, profile_image FROM users WHERE email = ?',
+        [email]
+      );
+
+      if (existingEmailUsers.length > 0) {
+        // Link Google ID to existing account
+        user = existingEmailUsers[0];
+        await pool.query(
+          'UPDATE users SET google_id = ?' + (user.profile_image ? '' : ', profile_image = ?') + ' WHERE id = ?',
+          user.profile_image ? [googleId, user.id] : [googleId, picture, user.id]
+        );
+        // Refresh user record
+        const [updatedUsers] = await pool.query(
+          'SELECT id, name, email, phone, user_type, profile_image FROM users WHERE id = ?',
+          [user.id]
+        );
+        user = updatedUsers[0];
+      } else {
+        // 4. User does not exist at all -> Registration needed
+        if (!user_type) {
+          // Send ROLE_REQUIRED so front-end shows selection screen
+          return res.json({
+            success: false,
+            code: 'ROLE_REQUIRED',
+            message: 'Account role is required to complete registration',
+            googleProfile
+          });
+        }
+
+        // Validate user_type
+        if (!['homeowner', 'worker'].includes(user_type)) {
+          return res.status(400).json({
+            success: false,
+            message: 'Invalid user type'
+          });
+        }
+
+        // Insert new user
+        // Note: Password can be null for Google users
+        const [result] = await pool.query(
+          'INSERT INTO users (name, email, google_id, user_type, profile_image, password) VALUES (?, ?, ?, ?, ?, NULL)',
+          [name, email, googleId, user_type, picture]
+        );
+
+        const userId = result.insertId;
+
+        // If worker, create worker profile
+        if (user_type === 'worker') {
+          await pool.query(
+            'INSERT INTO workers (user_id, service_type, availability_status) VALUES (?, ?, ?)',
+            [userId, service_type || 'other', 'available']
+          );
+        }
+
+        // Create default notification settings
+        await pool.query(
+          'INSERT INTO notification_settings (user_id, email_notifications, push_notifications, sms_notifications) VALUES (?, TRUE, TRUE, FALSE) ON DUPLICATE KEY UPDATE user_id=user_id',
+          [userId]
+        );
+
+        // Fetch new user
+        const [newUsers] = await pool.query(
+          'SELECT id, name, email, phone, user_type, profile_image FROM users WHERE id = ?',
+          [userId]
+        );
+        user = newUsers[0];
+      }
+    }
+
+    // 5. Generate Access and Refresh tokens
+    const token = generateToken(user.id);
+    const refreshToken = generateRefreshToken(user.id);
+
+    res.json({
+      success: true,
+      message: 'Authentication successful',
+      token,
+      refreshToken,
+      user
+    });
+  } catch (error) {
+    console.error('Google authentication error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error during Google authentication',
+      error: error.message
+    });
+  }
+});
+
+// @route   POST /api/auth/refresh
+// @desc    Refresh JWT access token
+// @access  Public
+router.post('/refresh', async (req, res) => {
+  try {
+    const { refreshToken } = req.body;
+
+    if (!refreshToken) {
+      return res.status(400).json({
+        success: false,
+        message: 'Refresh token is required'
+      });
+    }
+
+    try {
+      const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET || process.env.JWT_SECRET);
+      
+      const [users] = await pool.query(
+        'SELECT id, name, email, phone, user_type, profile_image FROM users WHERE id = ?',
+        [decoded.id]
+      );
+
+      if (users.length === 0) {
+        return res.status(401).json({
+          success: false,
+          message: 'User not found'
+        });
+      }
+
+      const user = users[0];
+      const token = generateToken(user.id);
+      const newRefreshToken = generateRefreshToken(user.id); // Rotating refresh token
+
+      res.json({
+        success: true,
+        token,
+        refreshToken: newRefreshToken,
+        user
+      });
+    } catch (err) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid or expired refresh token'
+      });
+    }
+  } catch (error) {
+    console.error('Refresh token error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error during token refresh',
+      error: error.message
+    });
+  }
+});
+
+module.exports = router;

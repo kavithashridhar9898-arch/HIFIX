@@ -128,16 +128,16 @@ const HomeScreen = React.memo(function HomeScreen({ navigation }) {
   };
 
   const glassStyle = {
-    backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.55)' : 'rgba(255, 255, 255, 0.85)',
-    borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.7)' : 'rgba(255, 255, 255, 0.5)',
+    backgroundColor: isDarkMode ? 'rgba(16, 20, 21, 0.65)' : 'rgba(255, 255, 255, 0.85)',
+    borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.5)',
     borderWidth: 1,
   };
 
   const textPrimary = '#FFFFFF';
-  const textSecondary = 'rgba(255, 255, 255, 0.8)';
+  const textSecondary = 'rgba(255, 255, 255, 0.85)';
   
-  const glassTextPrimary = '#000000';
-  const glassTextSecondary = 'rgba(0, 0, 0, 0.6)';
+  const glassTextPrimary = isDarkMode ? '#FFFFFF' : '#000000';
+  const glassTextSecondary = isDarkMode ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.6)';
 
   const renderTopWorker = useCallback(({ item, index }) => {
     const inputRange = [
@@ -296,6 +296,7 @@ const HomeScreen = React.memo(function HomeScreen({ navigation }) {
             <View style={styles.headerTextContainer}>
               <Text style={[styles.greeting, { color: textSecondary }]}>Good Morning,</Text>
               <Text style={[styles.userName, { color: textPrimary }]}>{userFirstName}</Text>
+            </View>
             <View style={styles.headerRight}>
               <TouchableOpacity
                 style={styles.notificationBtn}

@@ -81,23 +81,26 @@ export default function WorkerDashboardScreen({ navigation }) {
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
         <Animated.View
           style={[styles.header, {
-            backgroundColor: headerAnim.interpolate({ inputRange: [0, 1], outputRange: ['#121212', '#1A1A1A'] }),
-            borderBottomColor: headerAnim.interpolate({ inputRange: [0, 1], outputRange: ['#222', '#333'] }),
+            backgroundColor: headerAnim.interpolate({ 
+              inputRange: [0, 1], 
+              outputRange: [isDarkMode ? '#121212' : 'rgba(255,255,255,0.8)', isDarkMode ? '#1A1A1A' : 'rgba(255,255,255,0.9)'] 
+            }),
+            borderBottomColor: colors.border,
           }]}
         >
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
             <View>
-              <Text style={styles.hello}>Welcome back</Text>
-              <Text style={styles.name}>{user?.name || 'Worker'}</Text>
+              <Text style={[styles.hello, { color: colors.textSecondary }]}>Welcome back</Text>
+              <Text style={[styles.name, { color: colors.text }]}>{user?.name || 'Worker'}</Text>
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <TouchableOpacity
                 style={styles.notificationBtn}
                 onPress={() => navigation.navigate('Notifications')}
               >
-                <Icon name="notifications-none" size={28} color="#fff" />
+                <Icon name="notifications-none" size={28} color={colors.text} />
                 {unreadCount > 0 && (
-                  <View style={styles.badgeContainer}>
+                  <View style={[styles.badgeContainer, { borderColor: isDarkMode ? '#1A1A1A' : '#FFFFFF' }]}>
                     <Text style={styles.badgeText}>{unreadCount > 99 ? '99+' : unreadCount}</Text>
                   </View>
                 )}
@@ -107,7 +110,7 @@ export default function WorkerDashboardScreen({ navigation }) {
                   const tabName = user?.user_type === 'worker' ? 'Jobs' : 'Bookings';
                   navigation.navigate(tabName);
                 }} 
-                style={styles.pillButton}
+                style={[styles.pillButton, { backgroundColor: colors.primary }]}
               >
                 <Icon name="list-alt" size={18} color="#fff" />
                 <Text style={styles.pillText}>{user?.user_type === 'worker' ? 'Jobs' : 'Bookings'}</Text>
@@ -118,7 +121,7 @@ export default function WorkerDashboardScreen({ navigation }) {
           <View style={styles.availabilityRow}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <View style={[styles.statusDot, { backgroundColor: availability === 'available' ? '#2ecc71' : '#f1c40f' }]} />
-              <Text style={styles.availabilityText}>{availability === 'available' ? 'Available' : 'Busy'}</Text>
+              <Text style={[styles.availabilityText, { color: colors.text }]}>{availability === 'available' ? 'Available' : 'Busy'}</Text>
             </View>
             <Switch
               value={availability === 'available'}
@@ -131,46 +134,46 @@ export default function WorkerDashboardScreen({ navigation }) {
 
         <View style={styles.cardsGrid}>
           {cards.map((c) => (
-            <View key={c.key} style={[styles.card, { borderColor: `${c.color}55` }] }>
+            <View key={c.key} style={[styles.card, { borderColor: `${c.color}55`, backgroundColor: colors.surface }] }>
               <View style={[styles.cardIcon, { backgroundColor: `${c.color}33` }]}>
                 <Icon name={c.icon} size={22} color={c.color} />
               </View>
-              <Text style={[styles.cardValue, { color: '#fff' }]}>{c.value}</Text>
-              <Text style={[styles.cardLabel, { color: '#bbb' }]}>{c.label}</Text>
+              <Text style={[styles.cardValue, { color: colors.text }]}>{c.value}</Text>
+              <Text style={[styles.cardLabel, { color: colors.textSecondary }]}>{c.label}</Text>
             </View>
           ))}
-          <View style={[styles.card, { borderColor: '#4db6ac55' }] }>
+          <View style={[styles.card, { borderColor: '#4db6ac55', backgroundColor: colors.surface }] }>
             <View style={[styles.cardIcon, { backgroundColor: '#4db6ac33' }]}>
               <Icon name="attach-money" size={22} color="#4DB6AC" />
             </View>
-            <Text style={[styles.cardValue, { color: '#fff' }]}>${stats.earnings.toFixed(0)}</Text>
-            <Text style={[styles.cardLabel, { color: '#bbb' }]}>Earnings</Text>
+            <Text style={[styles.cardValue, { color: colors.text }]}>${stats.earnings.toFixed(0)}</Text>
+            <Text style={[styles.cardLabel, { color: colors.textSecondary }]}>Earnings</Text>
           </View>
         </View>
 
         <View style={{ paddingHorizontal: 16, marginTop: 10 }}>
-          <Text style={styles.sectionTitle}>Recent Requests</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Recent Requests</Text>
           {bookings.filter(b => ['pending', 'accepted', 'in_progress'].includes(b.status)).slice(0, 6).map((b) => (
             <TouchableOpacity
               key={b.id}
               onPress={() => navigation.navigate('BookingDetail', { id: b.id })}
-              style={styles.requestRow}
+              style={[styles.requestRow, { borderBottomColor: colors.border }]}
             >
               <View style={[styles.requestIcon, { backgroundColor: 'rgba(37,99,235,0.15)' }]}>
                 <Icon name="home-repair-service" size={18} color={colors.primary} />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.requestTitle}>{(b.service_type || 'Service').toString().toUpperCase()}</Text>
-                <Text style={styles.requestSub}>{b.address || b.homeowner_name}</Text>
+                <Text style={[styles.requestTitle, { color: colors.text }]}>{(b.service_type || 'Service').toString().toUpperCase()}</Text>
+                <Text style={[styles.requestSub, { color: colors.textSecondary }]}>{b.address || b.homeowner_name}</Text>
               </View>
-              <View style={styles.statusPill}>
-                <Text style={styles.statusPillText}>{b.status.replace('_', ' ')}</Text>
+              <View style={[styles.statusPill, { backgroundColor: colors.border }]}>
+                <Text style={[styles.statusPillText, { color: colors.text }]}>{b.status.replace('_', ' ')}</Text>
               </View>
-              <Icon name="chevron-right" size={22} color="#888" />
+              <Icon name="chevron-right" size={22} color={colors.textSecondary} />
             </TouchableOpacity>
           ))}
           {bookings.length === 0 && !loading && (
-            <Text style={{ color: '#888', marginTop: 8 }}>No requests yet. You’ll see new requests here.</Text>
+            <Text style={{ color: colors.textSecondary, marginTop: 8 }}>No requests yet. You’ll see new requests here.</Text>
           )}
         </View>
       </ScrollView>
@@ -180,17 +183,17 @@ export default function WorkerDashboardScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0b0b0b' },
+  container: { flex: 1, backgroundColor: 'transparent' },
   header: {
     paddingHorizontal: 16,
     paddingTop: 10,
     paddingBottom: 16,
     borderBottomWidth: 1,
   },
-  hello: { color: '#9aa0a6', fontSize: 14 },
-  name: { color: '#fff', fontSize: 22, fontWeight: '700', marginTop: 2 },
+  hello: { fontSize: 14 },
+  name: { fontSize: 22, fontWeight: '700', marginTop: 2 },
   availabilityRow: { marginTop: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  availabilityText: { color: '#ddd', fontSize: 14, marginLeft: 8 },
+  availabilityText: { fontSize: 14, marginLeft: 8 },
   statusDot: { width: 10, height: 10, borderRadius: 10, marginRight: 8 },
   notificationBtn: { position: 'relative', padding: 4, marginRight: 10 },
   badgeContainer: {
@@ -205,21 +208,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 4,
     borderWidth: 2,
-    borderColor: '#0b0b0b',
   },
   badgeText: { color: '#FFF', fontSize: 10, fontWeight: 'bold' },
-  pillButton: { flexDirection: 'row', backgroundColor: '#243b55', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, alignItems: 'center' },
+  pillButton: { flexDirection: 'row', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, alignItems: 'center' },
   pillText: { color: '#fff', marginLeft: 6, fontWeight: '600' },
   cardsGrid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 12, paddingTop: 12 },
-  card: { width: '48%', margin: '1%', backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 14, padding: 14, borderWidth: 1 },
+  card: { width: '48%', margin: '1%', borderRadius: 14, padding: 14, borderWidth: 1 },
   cardIcon: { width: 34, height: 34, borderRadius: 8, alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
   cardValue: { fontSize: 20, fontWeight: '800' },
   cardLabel: { fontSize: 12, marginTop: 2 },
-  sectionTitle: { color: '#fff', fontSize: 18, fontWeight: '700', marginBottom: 8 },
-  requestRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomColor: '#222', borderBottomWidth: 1 },
+  sectionTitle: { fontSize: 18, fontWeight: '700', marginBottom: 8 },
+  requestRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1 },
   requestIcon: { width: 34, height: 34, borderRadius: 8, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
-  requestTitle: { color: '#fff', fontWeight: '700' },
-  requestSub: { color: '#9aa0a6', fontSize: 12 },
-  statusPill: { paddingHorizontal: 10, paddingVertical: 4, backgroundColor: 'rgba(255,255,255,0.07)', borderRadius: 999, marginRight: 6 },
-  statusPillText: { color: '#ddd', fontSize: 12, textTransform: 'capitalize' },
+  requestTitle: { fontWeight: '700' },
+  requestSub: { fontSize: 12 },
+  statusPill: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999, marginRight: 6 },
+  statusPillText: { fontSize: 12, textTransform: 'capitalize' },
 });

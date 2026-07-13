@@ -26,7 +26,7 @@ const getImageUrl = (imageUrl) => {
 };
 
 const WorkerBottomSheet = ({ worker, visible, onClose, onBook, onMessage, onViewProfile }) => {
-  const { isDarkMode } = useTheme();
+  const { colors, isDarkMode } = useTheme();
   const translateY = useRef(new Animated.Value(SHEET_HEIGHT)).current;
 
   useEffect(() => {
@@ -84,8 +84,8 @@ const WorkerBottomSheet = ({ worker, visible, onClose, onBook, onMessage, onView
     borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.5)',
   };
 
-  const textPrimary = isDarkMode ? '#FFFFFF' : '#101415';
-  const textSecondary = isDarkMode ? 'rgba(255,255,255,0.6)' : 'rgba(16,20,21,0.6)';
+  const textPrimary = colors.text;
+  const textSecondary = colors.textSecondary;
 
   return (
     <Animated.View

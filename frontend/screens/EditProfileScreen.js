@@ -17,10 +17,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../context/AuthContext';
 import api, { API_BASE_URL } from '../config/api';
 import { useTheme } from '../context/ThemeContext';
+import { useAlert } from '../context/AlertContext';
 import PremiumBackground from '../components/PremiumBackground';
 
 const EditProfileScreen = React.memo(function EditProfileScreen({ navigation }) {
   const { user, updateUser } = useAuth();
+  const { showAlert } = useAlert();
   const { colors, isDarkMode } = useTheme();
   const [loading, setLoading] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -66,7 +68,7 @@ const EditProfileScreen = React.memo(function EditProfileScreen({ navigation }) 
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       
       if (status !== 'granted') {
-        Alert.alert('Permission Required', 'Please allow access to your photos to upload a profile image.');
+        showAlert('Permission Required', 'Please allow access to your photos to upload a profile image.', 'info');
         return;
       }
 
@@ -82,7 +84,7 @@ const EditProfileScreen = React.memo(function EditProfileScreen({ navigation }) 
       }
     } catch (error) {
       console.error('Error picking image:', error);
-      Alert.alert('Error', 'Failed to pick image');
+      showAlert('Image Selection Failed', 'We couldn\'t access your photos. Please try again.', 'error');
     }
   };
 
@@ -135,7 +137,7 @@ const EditProfileScreen = React.memo(function EditProfileScreen({ navigation }) 
         }
         // Refresh profile data
         fetchProfile();
-        Alert.alert('Success', 'Profile image updated successfully');
+        showAlert('Profile Image Updated', 'Your profile image has been successfully updated.', 'success');
       }
     } catch (error) {
       console.error('Upload error:', error);
@@ -152,7 +154,7 @@ const EditProfileScreen = React.memo(function EditProfileScreen({ navigation }) 
         errorMessage += 'Please try again.';
       }
       
-      Alert.alert('Upload Error', errorMessage);
+      showAlert('Upload Failed', errorMessage, 'error');
     } finally {
       setUploadingImage(false);
     }
@@ -160,7 +162,7 @@ const EditProfileScreen = React.memo(function EditProfileScreen({ navigation }) 
 
   const handleSave = async () => {
     if (!formData.name || !formData.email || !formData.phone) {
-      Alert.alert('Error', 'Please fill in all fields');
+      showAlert('Incomplete Profile', 'Please fill in all fields to save your profile.', 'info');
       return;
     }
 
@@ -168,12 +170,15 @@ const EditProfileScreen = React.memo(function EditProfileScreen({ navigation }) 
     try {
       const response = await api.put('/auth/profile', formData);
       if (response.data.success) {
-        Alert.alert('Success', 'Profile updated successfully', [
-          { text: 'OK', onPress: () => navigation.goBack() },
-        ]);
+        showAlert(
+          'Profile Updated',
+          'Your profile details have been updated successfully.',
+          'success',
+          () => navigation.goBack()
+        );
       }
     } catch (error) {
-      Alert.alert('Error', error.response?.data?.message || 'Failed to update profile');
+      showAlert('Update Failed', error.response?.data?.message || 'We couldn\'t update your profile at this time.', 'error');
     } finally {
       setLoading(false);
     }
