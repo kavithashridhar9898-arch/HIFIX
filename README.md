@@ -3,7 +3,7 @@
 # ⚡ HiFix
 ### AI-Powered Home Service Marketplace with Blockchain Integration
 
-<img src="./assets/logo.png" width="180"/>
+
 
 ### 🚀 Smart • Reliable • Secure
 
