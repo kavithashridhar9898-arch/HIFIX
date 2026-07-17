@@ -1,10 +1,7 @@
 <div align="center">
-
-#  HiFix
 # HiFix
-
 <p align="center">
-  <img src="assets/logo.png" width="220">
+<img src="./assets/logo.png" width="180">
 </p>
 ### AI-Powered Home Service Marketplace with Blockchain Integration
 
