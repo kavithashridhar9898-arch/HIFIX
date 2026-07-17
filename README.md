@@ -1,8 +1,6 @@
 <div align="center">
 # HiFix
-<p align="center">
-<img src="./assets/logo.png" width="180">
-</p>
+<img src="https://raw.githubusercontent.com/kavithashridhar9898-arch/HIFIX/main/assets/logo.png" width="180">
 ### AI-Powered Home Service Marketplace with Blockchain Integration
 
 
