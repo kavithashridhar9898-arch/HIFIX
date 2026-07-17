@@ -1,5 +1,4 @@
-<div align="center">
-# HiFix
+<div align="center"
 <p align="center">
   <img src="https://raw.githubusercontent.com/kavithashridhar9898-arch/HIFIX/main/frontend/assets/logo.png" alt="HiFix Logo" width="220">
 </p>
