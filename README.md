@@ -1,11 +1,11 @@
 <div align="center">
 
-# ⚡ HiFix
+#  HiFix
 ### AI-Powered Home Service Marketplace with Blockchain Integration
 
 
 
-### 🚀 Smart • Reliable • Secure
+### Smart • Reliable • Secure
 
 AI Powered Service Matching • Blockchain Verified Payments • Live Tracking • AI Diagnostics
 
@@ -19,7 +19,7 @@ AI Powered Service Matching • Blockchain Verified Payments • Live Tracking �
 
 ---
 
-# 📖 About HiFix
+# About HiFix
 
 HiFix is a premium AI-powered home service marketplace designed to seamlessly connect customers with verified local professionals such as electricians, plumbers, carpenters, painters, mechanics, AC technicians and many more.
 
@@ -39,9 +39,9 @@ The application focuses on:
 
 ---
 
-# ✨ Key Features
+#  Key Features
 
-## 🤖 AI Powered Recommendation Engine
+##  AI Powered Recommendation Engine
 
 - Smart worker recommendation
 - Personalized service suggestions
@@ -52,7 +52,7 @@ The application focuses on:
 
 ---
 
-## 📍 Real-Time GPS Tracking
+##  Real-Time GPS Tracking
 
 - Live worker location
 - ETA prediction
@@ -62,7 +62,7 @@ The application focuses on:
 
 ---
 
-## 🔐 Secure Authentication
+##  Secure Authentication
 
 - JWT Authentication
 - Role Based Access
@@ -73,7 +73,7 @@ The application focuses on:
 
 ---
 
-## ⛓ Blockchain Payment Verification
+##  Blockchain Payment Verification
 
 - Ethereum Smart Contracts
 - Immutable Transaction History
@@ -84,7 +84,7 @@ The application focuses on:
 
 ---
 
-## 💳 Razorpay Integration
+##  Razorpay Integration
 
 - Secure Online Payments
 - Payment Verification
@@ -95,7 +95,7 @@ The application focuses on:
 
 ---
 
-## 📷 AI Diagnostic Camera
+##  AI Diagnostic Camera
 
 Users can upload
 
@@ -112,7 +112,7 @@ The AI analyzes
 
 ---
 
-## 💬 Real-Time Chat
+##  Real-Time Chat
 
 - Customer ↔ Worker Chat
 - Image Sharing
@@ -123,7 +123,7 @@ The AI analyzes
 
 ---
 
-## ⭐ Reviews & Ratings
+##  Reviews & Ratings
 
 - Service Ratings
 - Customer Reviews
@@ -132,7 +132,7 @@ The AI analyzes
 
 ---
 
-## 🔔 Notification System
+##  Notification System
 
 - Booking Updates
 - Payment Notifications
@@ -143,7 +143,7 @@ The AI analyzes
 
 ---
 
-## 👤 Customer Dashboard
+##  Customer Dashboard
 
 - Home
 - Search Services
@@ -157,7 +157,7 @@ The AI analyzes
 
 ---
 
-## 👨‍🔧 Worker Dashboard
+##  Worker Dashboard
 
 - Service Requests
 - Accept / Reject Booking
@@ -169,7 +169,7 @@ The AI analyzes
 
 ---
 
-## 🛠 Admin Dashboard
+##  Admin Dashboard
 
 - User Management
 - Worker Management
@@ -182,7 +182,7 @@ The AI analyzes
 
 ---
 
-# 📱 Application Modules
+#  Application Modules
 
 ```
 HiFix
@@ -207,7 +207,7 @@ HiFix
 
 ---
 
-# 🏗 System Architecture
+#  System Architecture
 
 ```
 Customer App
@@ -240,7 +240,7 @@ Google Maps API
 
 ---
 
-# ⚙ Tech Stack
+#  Tech Stack
 
 ## Frontend
 
@@ -307,7 +307,7 @@ Google Maps API
 
 ---
 
-# 📂 Project Structure
+#  Project Structure
 
 ```
 HiFix
@@ -365,7 +365,7 @@ HiFix
 
 ---
 
-# 📲 Application Screens
+#  Application Screens
 
 ### Authentication
 
@@ -421,7 +421,7 @@ HiFix
 
 ---
 
-# 🔒 Security Features
+#  Security Features
 
 - JWT Authentication
 - Password Hashing (Argon2/Bcrypt)
@@ -435,7 +435,7 @@ HiFix
 
 ---
 
-# 🎨 UI / UX
+#  UI / UX
 
 HiFix follows a premium futuristic design language.
 
@@ -457,7 +457,7 @@ HiFix follows a premium futuristic design language.
 
 ---
 
-# 🚀 Future Enhancements
+#  Future Enhancements
 
 - Voice Assistant
 - AI Chatbot
@@ -473,7 +473,7 @@ HiFix follows a premium futuristic design language.
 
 ---
 
-# 📊 Project Highlights
+#  Project Highlights
 
 ✅ AI Powered Recommendation
 
@@ -500,7 +500,7 @@ HiFix follows a premium futuristic design language.
 ✅ Notifications
 
 
-# 📜 License
+# License
 
 This project is developed for academic and research purposes.
 
