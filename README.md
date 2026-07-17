@@ -1,73 +1,517 @@
-# HIFIX - Home Service Connection App
+<div align="center">
 
-A mobile application that connects homeowners with local service workers (painters, electricians, plumbers) using GPS-based location matching.
+# ⚡ HiFix
+### AI-Powered Home Service Marketplace with Blockchain Integration
 
-## Project Structure
+<img src="./assets/logo.png" width="180"/>
+
+### 🚀 Smart • Reliable • Secure
+
+AI Powered Service Matching • Blockchain Verified Payments • Live Tracking • AI Diagnostics
+
+![React Native](https://img.shields.io/badge/React%20Native-Expo-blue?style=for-the-badge&logo=react)
+![NodeJS](https://img.shields.io/badge/Node.js-Express-green?style=for-the-badge&logo=node.js)
+![MySQL](https://img.shields.io/badge/MySQL-Database-orange?style=for-the-badge&logo=mysql)
+![Ethereum](https://img.shields.io/badge/Blockchain-Ethereum-purple?style=for-the-badge&logo=ethereum)
+![AI](https://img.shields.io/badge/Artificial-Intelligence-blueviolet?style=for-the-badge)
+
+</div>
+
+---
+
+# 📖 About HiFix
+
+HiFix is a premium AI-powered home service marketplace designed to seamlessly connect customers with verified local professionals such as electricians, plumbers, carpenters, painters, mechanics, AC technicians and many more.
+
+The platform combines Artificial Intelligence, Blockchain Technology and Modern Mobile Development to create a secure, intelligent and luxury service booking experience.
+
+Unlike traditional service platforms, HiFix intelligently recommends professionals based on user location, ratings, availability, expertise and previous work history while ensuring transparent blockchain verified payment records.
+
+The application focuses on:
+
+- Intelligent Service Discovery
+- Secure Digital Payments
+- Real-Time Tracking
+- AI Fault Diagnosis
+- Professional UI/UX
+- Worker Verification
+- Blockchain Transaction Validation
+
+---
+
+# ✨ Key Features
+
+## 🤖 AI Powered Recommendation Engine
+
+- Smart worker recommendation
+- Personalized service suggestions
+- Nearby worker detection
+- Dynamic ranking system
+- Intelligent search
+- Category prediction
+
+---
+
+## 📍 Real-Time GPS Tracking
+
+- Live worker location
+- ETA prediction
+- Route monitoring
+- Distance calculation
+- Google Maps Integration
+
+---
+
+## 🔐 Secure Authentication
+
+- JWT Authentication
+- Role Based Access
+- Email OTP Verification
+- Password Recovery
+- Session Management
+- Encrypted Password Storage
+
+---
+
+## ⛓ Blockchain Payment Verification
+
+- Ethereum Smart Contracts
+- Immutable Transaction History
+- Transparent Service Records
+- Blockchain Payment Verification
+- Digital Service Receipts
+- Transaction Hash Verification
+
+---
+
+## 💳 Razorpay Integration
+
+- Secure Online Payments
+- Payment Verification
+- Payment History
+- Invoice Generation
+- Refund Support
+- Escrow Ready Architecture
+
+---
+
+## 📷 AI Diagnostic Camera
+
+Users can upload
+
+- Images
+- Videos
+
+The AI analyzes
+
+- Appliance faults
+- Electrical issues
+- Plumbing leaks
+- Possible repair causes
+- Estimated repair cost
+
+---
+
+## 💬 Real-Time Chat
+
+- Customer ↔ Worker Chat
+- Image Sharing
+- Voice Messages
+- Read Receipts
+- Typing Indicator
+- Push Notifications
+
+---
+
+## ⭐ Reviews & Ratings
+
+- Service Ratings
+- Customer Reviews
+- Worker Reputation
+- Verified Reviews
+
+---
+
+## 🔔 Notification System
+
+- Booking Updates
+- Payment Notifications
+- Service Alerts
+- Promotional Offers
+- Push Notifications
+- Email Notifications
+
+---
+
+## 👤 Customer Dashboard
+
+- Home
+- Search Services
+- Categories
+- Nearby Workers
+- Booking History
+- Wallet
+- Saved Addresses
+- AI Diagnostics
+- Profile Management
+
+---
+
+## 👨‍🔧 Worker Dashboard
+
+- Service Requests
+- Accept / Reject Booking
+- Earnings
+- Schedule
+- Reviews
+- Availability Status
+- Profile Management
+
+---
+
+## 🛠 Admin Dashboard
+
+- User Management
+- Worker Management
+- Analytics
+- Revenue Reports
+- Blockchain Transactions
+- Booking Monitoring
+- Payment Monitoring
+- AI Reports
+
+---
+
+# 📱 Application Modules
 
 ```
-pro/
-├── backend/          # Node.js/Express backend
-├── frontend/         # React Native mobile app
-└── README.md
+HiFix
+
+├── Authentication
+├── Customer Module
+├── Worker Module
+├── Admin Module
+├── AI Recommendation Engine
+├── AI Diagnostic Camera
+├── Blockchain Module
+├── Razorpay Payments
+├── Live Tracking
+├── Chat System
+├── Notification Service
+├── Booking Management
+├── Wallet
+├── Reviews
+├── Profile
+└── Analytics
 ```
 
-## Tech Stack
+---
 
-- **Frontend**: React Native with Expo
-- **Backend**: Node.js with Express
-- **Database**: MySQL
+# 🏗 System Architecture
 
-## Features
-
-- GPS-based worker discovery
-- User authentication
-- Worker profiles and ratings
-- Service booking system
-- Real-time location matching
-
-## Setup Instructions
-
-### Backend Setup
-```bash
-cd backend
-npm install
-npm start
+```
+Customer App
+        │
+        ▼
+React Native (Expo)
+        │
+        ▼
+REST API
+        │
+        ▼
+Node.js + Express
+        │
+ ┌──────┼──────────┐
+ ▼      ▼          ▼
+MySQL   AI Engine  Blockchain
+ │                  │
+ │                  ▼
+ │            Smart Contract
+ │
+ ▼
+Razorpay Payment Gateway
+ │
+ ▼
+Notification Service
+ │
+ ▼
+Google Maps API
 ```
 
-### Frontend Setup
-```bash
-cd frontend
-npm install
-npm start
+---
+
+# ⚙ Tech Stack
+
+## Frontend
+
+- React Native
+- Expo
+- TypeScript
+- React Navigation
+- React Native Reanimated
+- React Native Gesture Handler
+- Expo Router
+
+---
+
+## Backend
+
+- Node.js
+- Express.js
+- REST APIs
+- JWT Authentication
+
+---
+
+## Database
+
+- MySQL
+
+---
+
+## AI
+
+- Python
+- Scikit Learn
+- OpenCV
+- TensorFlow (Optional)
+
+---
+
+## Blockchain
+
+- Solidity
+- Ethereum
+- Hardhat
+- Ethers.js
+
+---
+
+## Payments
+
+- Razorpay
+
+---
+
+## Cloud
+
+- Firebase
+- AWS
+- Cloudinary
+
+---
+
+## Maps
+
+- Google Maps API
+
+---
+
+# 📂 Project Structure
+
+```
+HiFix
+
+├── client/
+│
+├── server/
+│
+├── blockchain/
+│
+├── smart-contracts/
+│
+├── ai-model/
+│
+├── assets/
+│
+├── components/
+│
+├── hooks/
+│
+├── services/
+│
+├── screens/
+│
+├── navigation/
+│
+├── constants/
+│
+├── context/
+│
+├── redux/
+│
+├── database/
+│
+├── uploads/
+│
+├── utils/
+│
+├── middleware/
+│
+├── routes/
+│
+├── controllers/
+│
+├── models/
+│
+├── config/
+│
+├── docs/
+│
+├── README.md
+│
+└── package.json
 ```
 
-## Database Configuration
+---
 
-- Host: localhost
-- User: root
-- Password: @Gunther89089
-- Database: hifix_db
+# 📲 Application Screens
 
-## App Logo & Icon Setup
+### Authentication
 
-To use your HIFIX logo as the app icon and logo:
+- Splash Screen
+- Onboarding
+- Login
+- Signup
+- Forgot Password
+- OTP Verification
 
-1. **Add your logo image file** to `frontend/assets/logo.png` (recommended size: 512x512 or larger)
-2. **Generate app icons** using an online tool like [App Icon Generator](https://www.appicon.co/):
-   - Upload your logo
-   - Select "Expo" platform
-   - Download and place files in `frontend/assets/`:
-     - `icon.png` (1024x1024)
-     - `adaptive-icon.png` (1024x1024)
-     - `splash.png` (1242x2436 with dark gray background #2C2C2C)
-     - `favicon.png` (48x48 for web)
-3. **See detailed instructions** in `frontend/assets/README.md` and `frontend/scripts/prepare-assets.md`
+---
 
-## API Endpoints
+### Customer
 
-- POST /api/auth/register - User registration
-- POST /api/auth/login - User login
-- GET /api/workers/nearby - Find nearby workers
-- GET /api/workers/:id - Get worker details
-- POST /api/bookings - Create booking
+- Home
+- Categories
+- Search
+- Worker Details
+- Booking
+- Booking History
+- Live Tracking
+- AI Diagnostic
+- Wallet
+- Notifications
+- Chat
+- Profile
 
+---
+
+### Worker
+
+- Dashboard
+- New Requests
+- Active Jobs
+- Earnings
+- Analytics
+- Reviews
+- Availability
+- Chat
+- Profile
+
+---
+
+### Admin
+
+- Dashboard
+- Users
+- Workers
+- Bookings
+- Reports
+- Revenue
+- Blockchain Logs
+
+---
+
+# 🔒 Security Features
+
+- JWT Authentication
+- Password Hashing (Argon2/Bcrypt)
+- HTTPS
+- Input Validation
+- SQL Injection Protection
+- XSS Protection
+- CSRF Protection
+- API Rate Limiting
+- Secure Environment Variables
+
+---
+
+# 🎨 UI / UX
+
+HiFix follows a premium futuristic design language.
+
+### Dark Mode
+
+- WebGL Animated Background
+- Glassmorphism
+- Neon Blue Accents
+- Floating Particles
+- Smooth Animations
+
+### Light Mode
+
+- Frosted White Cards
+- Soft Shadows
+- Premium Blue Highlights
+- Adaptive Icons
+- Material Design Principles
+
+---
+
+# 🚀 Future Enhancements
+
+- Voice Assistant
+- AI Chatbot
+- AR Appliance Scanner
+- Drone Inspection
+- IoT Integration
+- Predictive Maintenance
+- NFT Service Certificates
+- Multi Language Support
+- Apple Pay
+- UPI AutoPay
+- Subscription Plans
+
+---
+
+# 📊 Project Highlights
+
+✅ AI Powered Recommendation
+
+✅ Blockchain Verification
+
+✅ Razorpay Payments
+
+✅ Live Tracking
+
+✅ AI Diagnostics
+
+✅ Secure Authentication
+
+✅ Professional UI/UX
+
+✅ Premium Animations
+
+✅ Dark & Light Mode
+
+✅ Worker Verification
+
+✅ Chat System
+
+✅ Notifications
+
+
+# 📜 License
+
+This project is developed for academic and research purposes.
+
+Future commercial deployment may require additional licensing, payment gateway compliance, and blockchain network deployment.
+
+---
+
+<div align="center">
+
+## ⭐ If you like this project, don't forget to star the repository.
+
+**HiFix — Smart. Reliable. Trusted.**
+
+</div>
