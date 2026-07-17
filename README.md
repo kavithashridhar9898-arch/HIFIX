@@ -2,7 +2,7 @@
 <p align="center">
   <img src="https://raw.githubusercontent.com/kavithashridhar9898-arch/HIFIX/main/frontend/assets/logo.png" alt="HiFix Logo" width="220">
 </p>
-### AI-Powered Home Service Marketplace with Blockchain Integration
+AI-Powered Home Service Marketplace with Blockchain Integration
 
 
 
