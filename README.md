@@ -82,6 +82,9 @@ The application focuses on:
 - Blockchain Payment Verification
 - Digital Service Receipts
 - Transaction Hash Verification
+- <p align="center">
+  <img src="https://raw.githubusercontent.com/kavithashridhar9898-arch/HIFIX/main/frontend/assets/WhatsApp%20Image%202026-07-19%20at%2023.45.33.jpeg" alt="HiFix Banner" width="900">
+</p>
 
 ---
 
