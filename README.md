@@ -51,7 +51,7 @@ The application focuses on:
 - Intelligent search
 - Category prediction
 
----
+
 
 ##  Real-Time GPS Tracking
 
