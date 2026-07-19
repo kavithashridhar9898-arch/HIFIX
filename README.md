@@ -513,6 +513,6 @@ Future commercial deployment may require additional licensing, payment gateway c
 
 ## ⭐ If you like this project, don't forget to star the repository.
 
-**HiFix — Smart. Reliable. Trusted.
+**HiFix — Smart. Reliable. Trusted.**
 
 </div>
