@@ -144,7 +144,9 @@ The AI analyzes
 - Promotional Offers
 - Push Notifications
 - Email Notifications
-
+<p align="center">
+  <img src="https://raw.githubusercontent.com/kavithashridhar9898-arch/HIFIX/main/frontend/assets/notification.jpeg" alt="Notification Feature" width="250">
+</p>
 ---
 
 ##  Customer Dashboard
