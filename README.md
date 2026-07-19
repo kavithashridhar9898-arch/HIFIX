@@ -38,7 +38,7 @@ The application focuses on:
 - Worker Verification
 - Blockchain Transaction Validation
 
----
+
 
 #  Key Features
 
