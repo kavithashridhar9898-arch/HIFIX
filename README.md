@@ -2,7 +2,7 @@
 
 <img src="https://raw.githubusercontent.com/kavithashridhar9898-arch/HIFIX/main/frontend/assets/logo.png" width="160"/>
 
-# HiFix
+
 
 ### AI-Powered Home Service Marketplace
 
