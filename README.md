@@ -42,7 +42,7 @@
 
 ---
 
-### 🚀 Bringing Trusted Home Services to Your Fingertips
+###  Bringing Trusted Home Services to Your Fingertips
 
 HiFix is a premium AI-powered mobile application that connects homeowners with verified local professionals for a wide range of home services. Whether it's an emergency repair or routine maintenance, HiFix enables users to discover skilled workers nearby, book services in real time, communicate seamlessly, and manage appointments through an intuitive mobile experience.
 
@@ -52,7 +52,7 @@ Built using **React Native**, **Node.js**, **Express.js**, and **MySQL**, HiFix 
 
 ---
 
-## ✨ Why HiFix?
+##  Why HiFix?
 
 Finding trustworthy professionals for home maintenance can be time-consuming and uncertain. HiFix simplifies this process through AI-driven recommendations, real-time communication, and location-aware service discovery, ensuring users can quickly connect with the right expert whenever they need assistance.
 
