@@ -5,7 +5,7 @@
 
 
 ### AI-Powered Home Service Marketplace
-
+                                        
 <img src="https://raw.githubusercontent.com/kavithashridhar9898-arch/HIFIX/main/frontend/assets/ChatGPT%20Image%20Jul%2020%2C%202026%2C%2012_09_38%20AM.png"/>
 
 <p align="center">
