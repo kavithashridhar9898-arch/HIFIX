@@ -157,8 +157,6 @@ const WorkersScreen = React.memo(function WorkersScreen({ route, navigation }) {
 
   const loc = await Location.getCurrentPositionAsync({});
   setLocation(loc.coords);
-  // update counts for radius chips
-  updateRadiusChipCounts(loc.coords);
 
       // Try selected radius first, then progressively larger radii if nothing is found nearby
       const radiiKm = Array.from(new Set([selectedRadius, 50, 250, 2000, 20000]));
@@ -176,6 +174,8 @@ const WorkersScreen = React.memo(function WorkersScreen({ route, navigation }) {
           break;
         }
       }
+      // Calculate radius chip counts in-memory from fetched workers
+      updateRadiusChipCounts(found);
       // Apply filters and sorting
       let sorted = [...found];
       const minP = minPrice === '' ? null : Number(minPrice);
@@ -251,17 +251,12 @@ const WorkersScreen = React.memo(function WorkersScreen({ route, navigation }) {
     }
   };
 
-  const updateRadiusChipCounts = async (coords) => {
+  const updateRadiusChipCounts = (workerList = workers) => {
     try {
-      const pairs = await Promise.all(
-        radiusOptions.map(async (r) => {
-          const url = `/workers/nearby?latitude=${coords.latitude}&longitude=${coords.longitude}&radius=${r}` + (selectedService ? `&service_type=${selectedService}` : '');
-          const res = await api.get(url);
-          return [r, res.data?.count || 0];
-        })
-      );
       const map = {};
-      pairs.forEach(([r, c]) => (map[r] = c));
+      radiusOptions.forEach((r) => {
+        map[r] = (workerList || []).filter(w => parseFloat(w.distance || '0') <= r).length;
+      });
       setRadiusCounts(map);
     } catch (e) {
       // ignore errors

@@ -85,11 +85,22 @@ const ProfileScreen = React.memo(function ProfileScreen({ navigation }) {
     }
   };
 
+  const isWorkerUser = user?.user_type === 'worker' || profile?.user_type === 'worker';
+
   const menuItems = [
     { icon: 'edit', text: 'Edit Profile', screen: 'EditProfile' },
-    ...(user?.user_type === 'worker'
-      ? [{ icon: 'work', text: 'Worker Dashboard', screen: 'WorkerDashboard' }]
-      : []),
+    ...(isWorkerUser
+      ? [
+          { icon: 'work', text: 'Worker Dashboard', screen: 'WorkerDashboard' },
+          { icon: 'badge', text: 'Professional Details', screen: 'ProfessionalDetails' },
+          { icon: 'account-balance-wallet', text: 'Earnings & Payouts', screen: 'WorkerEarnings' },
+          { icon: 'receipt-long', text: 'Payment Requests', screen: 'PaymentRequests' },
+        ]
+      : [
+          { icon: 'receipt-long', text: 'My Invoices', screen: 'HomeownerInvoices' },
+        ]),
+    { icon: 'history', text: 'Payment History', screen: 'PaymentHistory' },
+    { icon: 'link', text: 'Blockchain Dashboard', screen: 'BlockchainAdmin' },
     { icon: 'notifications', text: 'Notifications', screen: 'Notifications' },
     { icon: 'security', text: 'Security', screen: 'Security' },
     { icon: 'help-outline', text: 'Help & Support', screen: 'Help' },

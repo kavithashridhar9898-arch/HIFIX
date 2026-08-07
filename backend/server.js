@@ -2,38 +2,66 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
+const compression = require('compression');
 const dotenv = require('dotenv');
 const path = require('path');
 const initializeDatabase = require('./config/dbInit');
+const errorHandler        = require('./middleware/errorHandler');
 
 dotenv.config();
 
 const app = express();
 const server = http.createServer(app);
+
+// Optimize HTTP Keep-Alive timeouts
+server.keepAliveTimeout = 65000;
+server.headersTimeout = 66000;
+
 const io = new Server(server, {
   cors: {
     origin: '*', // Adjust for production
   },
 });
 
-// Middleware
+// 1. Enable Gzip / Brotli response compression
+app.use(compression({
+  level: 6,
+  threshold: 512,
+  filter: (req, res) => {
+    if (req.headers['x-no-compression']) return false;
+    return compression.filter(req, res);
+  }
+}));
+
+// 2. Serve static files with intelligent browser caching headers
+app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
+  maxAge: '7d',
+  etag: true,
+  lastModified: true,
+  setHeaders: (res, filePath) => {
+    if (/\.(png|jpe?g|webp|gif|svg|pdf)$/i.test(filePath)) {
+      res.setHeader('Cache-Control', 'public, max-age=604800, immutable');
+    }
+  }
+}));
+
+// 3. CORS & Body Parsers
 app.use(cors({
   origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
 }));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Log all requests for debugging
-app.use((req, res, next) => {
-  console.log(`${req.method} ${req.path} - ${new Date().toISOString()}`);
-  next();
-});
-
-// Serve static files (uploaded images)
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// 4. Request logging pipeline (optimized for production throughput)
+if (process.env.NODE_ENV !== 'production') {
+  app.use((req, res, next) => {
+    console.log(`${req.method} ${req.path} - ${new Date().toISOString()}`);
+    next();
+  });
+}
 
 // Routes
 app.use('/api/auth', require('./routes/auth'));
@@ -41,6 +69,11 @@ app.use('/api/workers', require('./routes/workers'));
 app.use('/api/bookings', require('./routes/bookings'));
 app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api/chat', require('./routes/chat'));
+app.use('/api/payment', require('./routes/payment'));
+app.use('/api/worker-profile', require('./routes/workerProfile'));
+app.use('/api/work-timer', require('./routes/workTimer'));
+app.use('/api/invoice', require('./routes/invoiceRequests'));
+app.use('/api/blockchain', require('./routes/blockchain'));
 
 // Socket.io connection
 io.on('connection', (socket) => {
@@ -88,17 +121,19 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Error handling
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).send('Something broke!');
-});
+// Centralized error handling — must be last
+app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 const HOST = '0.0.0.0'; // Listen on all network interfaces
 
+const BlockchainQueue = require('./services/BlockchainQueue');
+
 initializeDatabase()
-  .then(() => {
+  .then(async () => {
+    // Initialize durable blockchain queue server restart recovery
+    await BlockchainQueue.initServerRecovery();
+
     server.listen(PORT, HOST, () => {
       console.log(`🚀 Server running on ${HOST}:${PORT}`);
       console.log(`📱 Accessible at http://192.168.189.251:${PORT}`);

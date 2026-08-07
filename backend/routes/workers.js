@@ -42,7 +42,17 @@ router.get('/nearby', protect, async (req, res) => {
       });
     }
 
-    // Build query
+    // Bounding Box pre-filter calculation (1 deg latitude ~ 111 km)
+    const latDelta = radiusKm / 111.0;
+    const cosLat = Math.max(Math.cos(lat * Math.PI / 180), 0.01);
+    const lngDelta = radiusKm / (111.0 * cosLat);
+
+    const latMin = lat - latDelta;
+    const latMax = lat + latDelta;
+    const lngMin = lng - lngDelta;
+    const lngMax = lng + lngDelta;
+
+    // Build query with bounding-box index filter & Haversine distance
     let query = `
       SELECT 
         w.id,
@@ -79,9 +89,11 @@ router.get('/nearby', protect, async (req, res) => {
       INNER JOIN users u ON w.user_id = u.id
       WHERE w.latitude IS NOT NULL
         AND w.longitude IS NOT NULL
+        AND w.latitude BETWEEN ? AND ?
+        AND w.longitude BETWEEN ? AND ?
     `;
 
-    const params = [lat, lng, lat];
+    const params = [lat, lng, lat, latMin, latMax, lngMin, lngMax];
 
     if (service_type) {
       query += ' AND w.service_type = ?';
@@ -259,25 +271,25 @@ router.get('/:id', protect, async (req, res) => {
 
     const worker = workers[0];
 
-    // Get reviews
-    const [reviews] = await pool.query(
-      `SELECT 
-        r.*,
-        u.name as reviewer_name,
-        u.profile_image as reviewer_image
-      FROM reviews r
-      INNER JOIN users u ON r.reviewer_id = u.id
-      WHERE r.worker_id = ?
-      ORDER BY r.created_at DESC
-      LIMIT 20`,
-      [workerId]
-    );
-
-    // Get gallery images
-    const [gallery] = await pool.query(
-      'SELECT * FROM worker_gallery WHERE worker_id = ? ORDER BY created_at DESC',
-      [workerId]
-    );
+    // Fetch reviews and gallery images concurrently to halve API latency
+    const [[reviews], [gallery]] = await Promise.all([
+      pool.query(
+        `SELECT 
+          r.*,
+          u.name as reviewer_name,
+          u.profile_image as reviewer_image
+        FROM reviews r
+        INNER JOIN users u ON r.reviewer_id = u.id
+        WHERE r.worker_id = ?
+        ORDER BY r.created_at DESC
+        LIMIT 20`,
+        [workerId]
+      ),
+      pool.query(
+        'SELECT * FROM worker_gallery WHERE worker_id = ? ORDER BY created_at DESC',
+        [workerId]
+      )
+    ]);
 
     res.json({
       success: true,

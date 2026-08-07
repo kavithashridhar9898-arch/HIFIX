@@ -64,15 +64,24 @@ const ChatScreen = React.memo(function ChatScreen({ route, navigation }) {
     };
   }, [socket]);
 
-  // Subtle animated gradient background
+  // Native-driven background animation loop with unmount cleanup
   useEffect(() => {
+    let isMounted = true;
     const animate = () => {
+      if (!isMounted) return;
       Animated.sequence([
-        Animated.timing(bgAnim, { toValue: 1, duration: 8000, useNativeDriver: false }),
-        Animated.timing(bgAnim, { toValue: 0, duration: 8000, useNativeDriver: false }),
-      ]).start(() => animate());
+        Animated.timing(bgAnim, { toValue: 1, duration: 8000, useNativeDriver: true }),
+        Animated.timing(bgAnim, { toValue: 0, duration: 8000, useNativeDriver: true }),
+      ]).start(({ finished }) => {
+        if (finished && isMounted) animate();
+      });
     };
     animate();
+    return () => {
+      isMounted = false;
+      bgAnim.stopAnimation();
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    };
   }, []);
 
   const fetchMessages = async () => {

@@ -265,6 +265,94 @@ function RootNavigator() {
             headerShown: false
           }}
         />
+        {/* ── Phase 2: Payment Module Screens ──────────────────────────── */}
+        <Stack.Screen
+          name="ProfessionalDetails"
+          getComponent={() => require('./screens/ProfessionalDetailsScreen').default}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="WorkTimer"
+          getComponent={() => require('./screens/WorkTimerScreen').default}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="InvoiceBuilder"
+          getComponent={() => require('./screens/InvoiceBuilderScreen').default}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="InvoicePreview"
+          getComponent={() => require('./screens/InvoicePreviewScreen').default}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="PaymentRequests"
+          getComponent={() => require('./screens/PaymentRequestsScreen').default}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="InvoiceView"
+          getComponent={() => require('./screens/InvoiceViewScreen').default}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="InvoiceEdit"
+          getComponent={() => require('./screens/InvoiceEditScreen').default}
+          options={{ headerShown: false }}
+        />
+        {/* ── Phase 3: Razorpay Payment & Financial Workflows ─────────── */}
+        <Stack.Screen
+          name="HomeownerInvoices"
+          getComponent={() => require('./screens/HomeownerInvoicesScreen').default}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="Payment"
+          getComponent={() => require('./screens/PaymentScreen').default}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="PaymentSuccess"
+          getComponent={() => require('./screens/PaymentSuccessScreen').default}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="WorkerEarnings"
+          getComponent={() => require('./screens/WorkerEarningsScreen').default}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="PaymentHistory"
+          getComponent={() => require('./screens/PaymentHistoryScreen').default}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="Receipt"
+          getComponent={() => require('./screens/ReceiptScreen').default}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="AdminDashboard"
+          getComponent={() => require('./screens/AdminDashboardScreen').default}
+          options={{ headerShown: false }}
+        />
+        {/* ── Phase 4: Polygon Blockchain Verification ────────────────── */}
+        <Stack.Screen
+          name="PublicVerification"
+          getComponent={() => require('./screens/PublicVerificationScreen').default}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="CertificateVerification"
+          getComponent={() => require('./screens/CertificateVerificationScreen').default}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="BlockchainAdmin"
+          getComponent={() => require('./screens/BlockchainAdminScreen').default}
+          options={{ headerShown: false }}
+        />
       </Stack.Navigator>
     </>
   );

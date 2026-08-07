@@ -1,14 +1,14 @@
 const mysql = require('mysql2/promise');
 require('dotenv').config();
 
-// Create connection pool for better performance
+// Create connection pool tuned for production throughput
 const pool = mysql.createPool({
   host: process.env.DB_HOST || '192.168.189.251',
   user: process.env.DB_USER || 'root',
   password: process.env.DB_PASSWORD||'@Gunther89089',
   database: process.env.DB_NAME || 'hifix_db',
   waitForConnections: true,
-  connectionLimit: 10,
+  connectionLimit: parseInt(process.env.DB_CONNECTION_LIMIT || '25', 10),
   queueLimit: 0,
   enableKeepAlive: true,
   keepAliveInitialDelay: 0

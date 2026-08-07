@@ -41,6 +41,7 @@
     "web": {
       "favicon": "./assets/favicon.jpg"
     },
+    "jsEngine": "hermes",
     "plugins": [
       [
         "expo-location",
@@ -57,6 +58,10 @@
         {
           "ios": {
             "useFrameworks": "static"
+          },
+          "android": {
+            "enableProguardInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true
           }
         }
       ]

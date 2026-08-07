@@ -108,9 +108,12 @@ router.post('/register', [
 
     // If worker, create worker profile
     if (user_type === 'worker') {
+      const wLat = req.body.latitude || 19.0760;
+      const wLng = req.body.longitude || 72.8777;
       await pool.query(
-        'INSERT INTO workers (user_id, service_type, availability_status) VALUES (?, ?, ?)',
-        [userId, req.body.service_type || 'other', 'available']
+        `INSERT INTO workers (user_id, service_type, availability_status, latitude, longitude, city, state)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [userId, req.body.service_type || 'other', 'available', wLat, wLng, req.body.city || 'Mumbai', req.body.state || 'Maharashtra']
       );
     }
 
@@ -852,9 +855,12 @@ router.post('/google', async (req, res) => {
 
         // If worker, create worker profile
         if (user_type === 'worker') {
+          const wLat = req.body.latitude || 19.0760;
+          const wLng = req.body.longitude || 72.8777;
           await pool.query(
-            'INSERT INTO workers (user_id, service_type, availability_status) VALUES (?, ?, ?)',
-            [userId, service_type || 'other', 'available']
+            `INSERT INTO workers (user_id, service_type, availability_status, latitude, longitude, city, state)
+             VALUES (?, ?, ?, ?, ?, ?, ?)`,
+            [userId, service_type || 'other', 'available', wLat, wLng, req.body.city || 'Mumbai', req.body.state || 'Maharashtra']
           );
         }
 

@@ -486,6 +486,104 @@ router.put('/:id/status', protect, [
   }
 });
 
+// @route   GET /api/bookings/nearby-requests
+// @desc    Get nearby pending service requests for workers
+// @access  Private (Worker only)
+router.get('/nearby-requests', protect, async (req, res) => {
+  try {
+    const { latitude, longitude, radius = 10 } = req.query;
+
+    if (!latitude || !longitude) {
+      return res.status(400).json({
+        success: false,
+        message: 'Latitude and longitude are required'
+      });
+    }
+
+    const lat = parseFloat(latitude);
+    const lng = parseFloat(longitude);
+    const radiusKm = parseFloat(radius);
+
+    if (isNaN(lat) || isNaN(lng) || isNaN(radiusKm)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid latitude, longitude, or radius'
+      });
+    }
+
+    // Bounding Box pre-filter calculation (1 deg latitude ~ 111 km)
+    const latDelta = radiusKm / 111.0;
+    const cosLat = Math.max(Math.cos(lat * Math.PI / 180), 0.01);
+    const lngDelta = radiusKm / (111.0 * cosLat);
+
+    const latMin = lat - latDelta;
+    const latMax = lat + latDelta;
+    const lngMin = lng - lngDelta;
+    const lngMax = lng + lngDelta;
+
+    // Get pending bookings with bounding-box index filter & distance calculation
+    const [requests] = await pool.query(
+      `SELECT 
+        b.*,
+        u.name as homeowner_name,
+        u.phone as homeowner_phone,
+        u.profile_image as homeowner_image,
+        w.service_type,
+        (6371 * acos(
+          cos(radians(?)) * 
+          cos(radians(b.latitude)) * 
+          cos(radians(b.longitude) - radians(?)) + 
+          sin(radians(?)) * 
+          sin(radians(b.latitude))
+        )) AS distance
+      FROM bookings b
+      INNER JOIN users u ON b.homeowner_id = u.id
+      INNER JOIN workers w ON b.worker_id = w.id
+      WHERE b.status = 'pending'
+        AND b.latitude IS NOT NULL
+        AND b.longitude IS NOT NULL
+        AND b.latitude BETWEEN ? AND ?
+        AND b.longitude BETWEEN ? AND ?
+      HAVING distance <= ?
+      ORDER BY distance ASC
+      LIMIT 50`,
+      [lat, lng, lat, latMin, latMax, lngMin, lngMax, radiusKm]
+    );
+
+    const formattedRequests = requests.map(r => ({
+      id: r.id,
+      homeownerId: r.homeowner_id,
+      homeownerName: r.homeowner_name,
+      homeownerPhone: r.homeowner_phone,
+      homeownerImage: r.homeowner_image,
+      workerId: r.worker_id,
+      serviceType: r.service_type,
+      description: r.description,
+      bookingDate: r.booking_date,
+      address: r.address,
+      latitude: parseFloat(r.latitude),
+      longitude: parseFloat(r.longitude),
+      estimatedPrice: r.estimated_price,
+      status: r.status,
+      distance: parseFloat(r.distance).toFixed(2),
+      createdAt: r.created_at
+    }));
+
+    res.json({
+      success: true,
+      count: formattedRequests.length,
+      requests: formattedRequests
+    });
+  } catch (error) {
+    console.error('Nearby requests error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+      error: error.message
+    });
+  }
+});
+
 // @route   GET /api/bookings/:id
 // @desc    Get booking details
 // @access  Private
@@ -555,91 +653,6 @@ router.get('/:id', protect, async (req, res) => {
   }
 });
 
-// @route   GET /api/bookings/nearby-requests
-// @desc    Get nearby pending service requests for workers
-// @access  Private (Worker only)
-router.get('/nearby-requests', protect, async (req, res) => {
-  try {
-    const { latitude, longitude, radius = 10 } = req.query;
-
-    if (!latitude || !longitude) {
-      return res.status(400).json({
-        success: false,
-        message: 'Latitude and longitude are required'
-      });
-    }
-
-    const lat = parseFloat(latitude);
-    const lng = parseFloat(longitude);
-    const radiusKm = parseFloat(radius);
-
-    if (isNaN(lat) || isNaN(lng) || isNaN(radiusKm)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid latitude, longitude, or radius'
-      });
-    }
-
-    // Get pending bookings with location data
-    const [requests] = await pool.query(
-      `SELECT 
-        b.*,
-        u.name as homeowner_name,
-        u.phone as homeowner_phone,
-        u.profile_image as homeowner_image,
-        w.service_type,
-        (6371 * acos(
-          cos(radians(?)) * 
-          cos(radians(b.latitude)) * 
-          cos(radians(b.longitude) - radians(?)) + 
-          sin(radians(?)) * 
-          sin(radians(b.latitude))
-        )) AS distance
-      FROM bookings b
-      INNER JOIN users u ON b.homeowner_id = u.id
-      INNER JOIN workers w ON b.worker_id = w.id
-      WHERE b.status = 'pending'
-        AND b.latitude IS NOT NULL
-        AND b.longitude IS NOT NULL
-      HAVING distance <= ?
-      ORDER BY distance ASC
-      LIMIT 50`,
-      [lat, lng, lat, radiusKm]
-    );
-
-    const formattedRequests = requests.map(r => ({
-      id: r.id,
-      homeownerId: r.homeowner_id,
-      homeownerName: r.homeowner_name,
-      homeownerPhone: r.homeowner_phone,
-      homeownerImage: r.homeowner_image,
-      workerId: r.worker_id,
-      serviceType: r.service_type,
-      description: r.description,
-      bookingDate: r.booking_date,
-      address: r.address,
-      latitude: parseFloat(r.latitude),
-      longitude: parseFloat(r.longitude),
-      estimatedPrice: r.estimated_price,
-      status: r.status,
-      distance: parseFloat(r.distance).toFixed(2),
-      createdAt: r.created_at
-    }));
-
-    res.json({
-      success: true,
-      count: formattedRequests.length,
-      requests: formattedRequests
-    });
-  } catch (error) {
-    console.error('Nearby requests error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Server error',
-      error: error.message
-    });
-  }
-});
 
 module.exports = router;
 

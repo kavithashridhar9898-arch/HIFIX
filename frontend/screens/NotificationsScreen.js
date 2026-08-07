@@ -115,8 +115,8 @@ const NotificationsScreen = React.memo(function NotificationsScreen({ navigation
           if (item.type === 'chat' && item.related_entity_id) {
             navigation.navigate('Chat', { conversationId: item.related_entity_id });
           } else if (item.type === 'booking' && item.related_entity_id) {
-             // Assuming we have a BookingDetail screen
-             navigation.navigate('Bookings');
+             // Navigate to booking detail if available, otherwise go to the bookings tab
+             navigation.navigate('BookingDetail', { bookingId: item.related_entity_id });
           }
         }}
       >

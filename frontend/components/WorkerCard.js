@@ -208,7 +208,7 @@ const WorkerCard = ({ worker, navigation, index }) => {
                       if (response.data.success) {
                         showAlert('Payment Successful', 'Booking created! You can now leave a review in Bookings tab.', 'success');
                         setAmount('');
-                        navigation.navigate('Bookings');
+                        navigation.navigate(user?.user_type === 'worker' ? 'Jobs' : 'Bookings');
                       } else {
                         showAlert('Payment Failed', response.data.message || 'We couldn\'t process your payment.', 'error');
                       }
@@ -403,4 +403,12 @@ const styles = StyleSheet.create({
   },
 });
 
-export default WorkerCard;
+export default React.memo(WorkerCard, (prevProps, nextProps) => {
+  return (
+    prevProps.worker.id === nextProps.worker.id &&
+    prevProps.worker.averageRating === nextProps.worker.averageRating &&
+    prevProps.worker.distance === nextProps.worker.distance &&
+    prevProps.worker.availabilityStatus === nextProps.worker.availabilityStatus &&
+    prevProps.index === nextProps.index
+  );
+});

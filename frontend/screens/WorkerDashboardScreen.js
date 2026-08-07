@@ -144,12 +144,29 @@ export default function WorkerDashboardScreen({ navigation }) {
           ))}
           <View style={[styles.card, { borderColor: '#4db6ac55', backgroundColor: colors.surface }] }>
             <View style={[styles.cardIcon, { backgroundColor: '#4db6ac33' }]}>
-              <Icon name="attach-money" size={22} color="#4DB6AC" />
+              <Icon name="currency-rupee" size={22} color="#4DB6AC" />
             </View>
-            <Text style={[styles.cardValue, { color: colors.text }]}>${stats.earnings.toFixed(0)}</Text>
+            <Text style={[styles.cardValue, { color: colors.text }]}>₹{stats.earnings.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</Text>
             <Text style={[styles.cardLabel, { color: colors.textSecondary }]}>Earnings</Text>
           </View>
         </View>
+
+        {/* Phase 2: Payment Requests quick action */}
+        <TouchableOpacity
+          style={[styles.paymentRequestsBtn, { backgroundColor: colors.primary }]}
+          onPress={() => navigation.navigate('PaymentRequests')}
+        >
+          <View style={styles.paymentRequestsBtnLeft}>
+            <View style={[styles.paymentRequestsIcon, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
+              <Icon name="receipt-long" size={22} color="#fff" />
+            </View>
+            <View>
+              <Text style={styles.paymentRequestsTitle}>Payment Requests</Text>
+              <Text style={styles.paymentRequestsSub}>View & manage your invoices</Text>
+            </View>
+          </View>
+          <Icon name="chevron-right" size={24} color="rgba(255,255,255,0.8)" />
+        </TouchableOpacity>
 
         <View style={{ paddingHorizontal: 16, marginTop: 10 }}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Recent Requests</Text>
@@ -224,4 +241,9 @@ const styles = StyleSheet.create({
   requestSub: { fontSize: 12 },
   statusPill: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999, marginRight: 6 },
   statusPillText: { fontSize: 12, textTransform: 'capitalize' },
+  paymentRequestsBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginHorizontal: 16, marginTop: 10, padding: 16, borderRadius: 18, shadowColor: '#2563EB', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.25, shadowRadius: 10, elevation: 4 },
+  paymentRequestsBtnLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  paymentRequestsIcon: { width: 42, height: 42, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
+  paymentRequestsTitle: { color: '#fff', fontWeight: '800', fontSize: 15 },
+  paymentRequestsSub: { color: 'rgba(255,255,255,0.75)', fontSize: 12, marginTop: 2 },
 });
