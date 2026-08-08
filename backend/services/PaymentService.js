@@ -401,10 +401,11 @@ const PaymentService = {
     // 7. Update worker earnings
     await ReceiptService.updateWorkerEarnings({ workerId: order.worker_id, amount });
 
-    // 8. Trigger async non-blocking Blockchain Registration for Receipt
+    // 8. Trigger async non-blocking Blockchain Registration for Receipt & Invoice
     try {
       const BlockchainQueue = require('./BlockchainQueue');
       BlockchainQueue.enqueueReceiptRegistration({ receiptId: receipt.id, req });
+      BlockchainQueue.enqueueInvoiceRegistration({ invoiceId: order.invoice_id, req });
     } catch (_) {}
 
     // 8. Notify both parties

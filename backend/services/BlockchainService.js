@@ -249,6 +249,49 @@ const BlockchainService = {
       status = 'TAMPERED';
     }
 
+    // Fallback: If invoice status is not direct VERIFIED/TAMPERED, check associated verified receipt or certificate
+    if (status !== 'VERIFIED' && status !== 'TAMPERED') {
+      const [receipts] = await pool.query(
+        'SELECT * FROM payment_receipts WHERE invoice_id = ? AND blockchain_status = ? ORDER BY id DESC LIMIT 1',
+        [invoiceId, 'VERIFIED']
+      );
+      if (receipts.length) {
+        const rec = receipts[0];
+        return {
+          status: 'VERIFIED',
+          isValid: true,
+          isTampered: false,
+          invoice: inv,
+          receipt: rec,
+          hash: rec.blockchain_hash,
+          txHash: rec.blockchain_tx_hash,
+          blockNumber: rec.blockchain_block_number,
+          network: rec.blockchain_network || ACTIVE_CONFIG.name,
+          explorerUrl: rec.blockchain_tx_hash ? `${ACTIVE_CONFIG.explorerUrl}/tx/${rec.blockchain_tx_hash}` : null,
+        };
+      }
+
+      const [certs] = await pool.query(
+        'SELECT * FROM work_certificates WHERE invoice_id = ? AND blockchain_status = ? ORDER BY id DESC LIMIT 1',
+        [invoiceId, 'VERIFIED']
+      );
+      if (certs.length) {
+        const cert = certs[0];
+        return {
+          status: 'VERIFIED',
+          isValid: true,
+          isTampered: false,
+          invoice: inv,
+          certificate: cert,
+          hash: cert.blockchain_hash,
+          txHash: cert.blockchain_tx_hash,
+          blockNumber: cert.blockchain_block_number,
+          network: cert.blockchain_network || ACTIVE_CONFIG.name,
+          explorerUrl: cert.blockchain_tx_hash ? `${ACTIVE_CONFIG.explorerUrl}/tx/${cert.blockchain_tx_hash}` : null,
+        };
+      }
+    }
+
     return {
       status,
       isValid: status === 'VERIFIED',
