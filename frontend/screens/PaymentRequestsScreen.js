@@ -219,7 +219,7 @@ export default function PaymentRequestsScreen({ navigation }) {
           </TouchableOpacity>
           <View>
             <Text style={[styles.headerTitle, { color: colors.text }]}>Payment Requests</Text>
-            {pagination && <Text style={[styles.headerMeta, { color: colors.textSecondary }]}>{pagination.total} total</Text>}
+            {!!pagination && <Text style={[styles.headerMeta, { color: colors.textSecondary }]}>{pagination.total} total</Text>}
           </View>
           <View style={{ width: 40 }} />
         </Animated.View>

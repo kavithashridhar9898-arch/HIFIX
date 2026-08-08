@@ -119,7 +119,7 @@ const BookingsScreen = React.memo(function BookingsScreen({ navigation }) {
             </Text>
           </View>
 
-          {item.estimated_price && (
+          {Number(item.estimated_price) > 0 && (
             <View style={styles.detailRow}>
               <Icon name="payments" size={18} color={colors.primary} />
               <Text style={[styles.detailText, { color: colors.primary, fontWeight: '800' }]}>

@@ -446,7 +446,7 @@ export default function HomeScreen({ navigation }) {
           </TouchableOpacity>
         </Animated.View>
 
-        {errorMsg && <Text style={styles.errorText}>{errorMsg}</Text>}
+        {!!errorMsg && <Text style={styles.errorText}>{errorMsg}</Text>}
 
         {/* Featured Workers Section */}
         {featuredWorkers.length > 0 && nearbyWorkers.length === 0 && (

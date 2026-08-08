@@ -18,7 +18,7 @@ const FieldInput = ({ label, field, placeholder, keyboardType = 'default', prefi
   <View style={styles.fieldGroup}>
     <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>{label}</Text>
     <View style={[styles.inputRow, inputStyle, { borderWidth: 1, borderRadius: 12 }]}>
-      {prefix && <Text style={[styles.prefix, { color: colors.textSecondary }]}>{prefix}</Text>}
+      {!!prefix && <Text style={[styles.prefix, { color: colors.textSecondary }]}>{prefix}</Text>}
       <TextInput
         style={[styles.input, { color: colors.text, flex: 1 }]}
         value={form[field]}

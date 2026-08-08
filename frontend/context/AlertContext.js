@@ -19,7 +19,9 @@ export const AlertProvider = ({ children }) => {
   const opacityValue = useRef(new Animated.Value(0)).current;
 
   const showAlert = (title, message, type = 'error', onConfirm = null) => {
-    setAlertConfig({ visible: true, title, message, type, onConfirm });
+    const safeTitle = typeof title === 'string' ? title : String(title || '');
+    const safeMessage = typeof message === 'string' ? message : (message?.message || (typeof message === 'object' ? JSON.stringify(message) : String(message || '')));
+    setAlertConfig({ visible: true, title: safeTitle, message: safeMessage, type, onConfirm });
     Animated.parallel([
       Animated.spring(scaleValue, {
         toValue: 1,

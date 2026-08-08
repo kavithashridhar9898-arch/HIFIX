@@ -189,7 +189,7 @@ const HomeScreen = React.memo(function HomeScreen({ navigation }) {
           <View style={[styles.cardStats, { borderTopColor: glassStyle.borderColor, borderBottomColor: glassStyle.borderColor }]}>
             <View style={styles.statItem}>
               <Icon name="star" size={18} color="#FBBF24" />
-              <Text style={[styles.statValue, { color: glassTextPrimary }]}>{item.averageRating?.toFixed(1) || '0.0'}</Text>
+              <Text style={[styles.statValue, { color: glassTextPrimary }]}>{Number(item.averageRating || 0).toFixed(1)}</Text>
               <Text style={[styles.statLabel, { color: glassTextSecondary }]}>Rating</Text>
             </View>
             <View style={[styles.statDivider, { backgroundColor: glassStyle.borderColor }]} />

@@ -343,16 +343,18 @@ const LoginScreen = React.memo(function LoginScreen({ navigation }) {
 
           <Animated.View
             style={[
-            styles.textContainer,
-            {
-              opacity: fadeAnim,
-              transform: [{ translateY: slideAnim }],
-            },
-          ]}
-        >
-          <Text style={[styles.title, { color: '#FFFFFF' }]}>Welcome Back</Text>
-          <Text style={[styles.subtitle, { color: 'rgba(255, 255, 255, 0.8)' }]}>Sign in to continue</Text>
-        </Animated.View>          <Animated.View
+              styles.textContainer,
+              {
+                opacity: fadeAnim,
+                transform: [{ translateY: slideAnim }],
+              },
+            ]}
+          >
+            <Text style={[styles.title, { color: '#FFFFFF' }]}>Welcome Back</Text>
+            <Text style={[styles.subtitle, { color: 'rgba(255, 255, 255, 0.8)' }]}>Sign in to continue</Text>
+          </Animated.View>
+
+          <Animated.View
             style={[
               styles.form,
               {

@@ -155,7 +155,7 @@ export default function InvoiceViewScreen({ route, navigation }) {
             <View style={[styles.card, glass]}>
               <Text style={[styles.cardTitle, { color: colors.text }]}>⏱ Work Summary</Text>
               <ROW label="Labour Cost" value={formatINRExact(invoice.labour_cost || 0)} bold accent={colors.primary} colors={colors} />
-              {invoice.min_charge_applied && (
+              {!!invoice.min_charge_applied && (
                 <ROW label="Min. Charge Applied" value={formatINR(invoice.min_charge || 0)} colors={colors} />
               )}
             </View>
@@ -192,10 +192,10 @@ export default function InvoiceViewScreen({ route, navigation }) {
               <Text style={[styles.cardTitle, { color: colors.text }]}>💰 Charges Breakdown</Text>
               <ROW label="Labour Cost"   value={formatINRExact(invoice.labour_cost || 0)}   colors={colors} />
               <ROW label="Material Cost" value={formatINRExact(invoice.material_cost || 0)} colors={colors} />
-              {(invoice.travel_cost    > 0) && <ROW label="Travel"    value={formatINRExact(invoice.travel_cost)}    colors={colors} />}
-              {(invoice.emergency_cost > 0) && <ROW label="Emergency" value={formatINRExact(invoice.emergency_cost)} colors={colors} />}
-              {(invoice.other_cost     > 0) && <ROW label="Other"     value={formatINRExact(invoice.other_cost)}     colors={colors} />}
-              {invoice.discount        > 0  && <ROW label="Discount"  value={`-${formatINRExact(invoice.discount)}`} colors={colors} />}
+              {Number(invoice.travel_cost) > 0 && <ROW label="Travel" value={formatINRExact(invoice.travel_cost)} colors={colors} />}
+              {Number(invoice.emergency_cost) > 0 && <ROW label="Emergency" value={formatINRExact(invoice.emergency_cost)} colors={colors} />}
+              {Number(invoice.other_cost) > 0 && <ROW label="Other" value={formatINRExact(invoice.other_cost)} colors={colors} />}
+              {Number(invoice.discount) > 0 && <ROW label="Discount" value={`-${formatINRExact(invoice.discount)}`} colors={colors} />}
             </View>
 
             {/* Grand Total */}

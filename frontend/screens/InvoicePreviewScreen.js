@@ -167,7 +167,7 @@ export default function InvoicePreviewScreen({ route, navigation }) {
               <ROW label="Duration"    value={duration}                          colors={colors} />
               <ROW label="Hourly Rate" value={`${formatINR(invoiceData.hourly_rate_snapshot)}/hr`} colors={colors} />
               <ROW label="Labour Cost" value={formatINRExact(invoiceData.labour_cost)} bold accent={colors.primary} colors={colors} />
-              {invoiceData.min_charge_applied && (
+              {!!invoiceData.min_charge_applied && (
                 <ROW label="Min. Service Charge Applied" value={`${formatINR(invoiceData.min_charge)}`} colors={colors} />
               )}
             </View>

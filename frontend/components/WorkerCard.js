@@ -143,9 +143,9 @@ const WorkerCard = ({ worker, navigation, index }) => {
         
         <View style={[styles.cardFooter, { borderTopColor: isDarkMode ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.05)' }]}>
           <View style={styles.priceContainer}>
-            <Text style={[styles.hourlyRate, { color: isDarkMode ? '#10B981' : '#059669' }]}>${(worker.hourlyRate || 0).toFixed(2)}<Text style={{fontSize:14, color: colors.textSecondary}}>/hr</Text></Text>
+            <Text style={[styles.hourlyRate, { color: isDarkMode ? '#10B981' : '#059669' }]}>${Number(worker.hourlyRate || 0).toFixed(2)}<Text style={{fontSize:14, color: colors.textSecondary}}>/hr</Text></Text>
             {!!worker.minCharge && (
-              <Text style={[styles.minCharge, { color: colors.textSecondary }]}>Min: ${worker.minCharge.toFixed(2)}</Text>
+              <Text style={[styles.minCharge, { color: colors.textSecondary }]}>Min: ${Number(worker.minCharge || 0).toFixed(2)}</Text>
             )}
           </View>
           
