@@ -1,0 +1,27 @@
+{
+  "dataset_version": "v1.0.0",
+  "total_images": 0,
+  "positive_images": 0,
+  "hard_negative_images": 0,
+  "splits": {
+    "train": 0,
+    "val": 0,
+    "test": 0
+  },
+  "class_counts": {
+    "visible_pipe_leak": 0,
+    "faucet_drain_leak": 0,
+    "exposed_wire": 0,
+    "damaged_socket_switch": 0,
+    "wall_crack_major": 0,
+    "water_seepage_stain": 0,
+    "damaged_furniture_joint": 0,
+    "ac_drain_leak": 0
+  },
+  "verified_images": 0,
+  "sanitized_images": 1,
+  "quarantined_images": 3,
+  "rejected_images": 3,
+  "created_at": "2026-08-16T20:30:00Z",
+  "updated_at": "2026-08-16T20:35:22.752Z"
+}

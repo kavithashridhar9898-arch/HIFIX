@@ -1,0 +1,15 @@
+# Authoritative HiFix Vision Dataset v1.0.0 Class Taxonomy
+# Stable class IDs (0-7) mapped to HiFix backend service categories
+
+names:
+  0: visible_pipe_leak
+  1: faucet_drain_leak
+  2: exposed_wire
+  3: damaged_socket_switch
+  4: wall_crack_major
+  5: water_seepage_stain
+  6: damaged_furniture_joint
+  7: ac_drain_leak
+
+nc: 8
+version: 1.0.0

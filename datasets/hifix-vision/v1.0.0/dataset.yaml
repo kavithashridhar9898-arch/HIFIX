@@ -1,0 +1,24 @@
+# HiFix Vision Dataset v1.0.0 Configuration
+# Defines dataset paths, class taxonomy, and composition targets
+
+path: ../datasets/hifix-vision/v1.0.0
+train: verified/train/images
+val: verified/val/images
+test: verified/test/images
+
+names:
+  0: visible_pipe_leak
+  1: faucet_drain_leak
+  2: exposed_wire
+  3: damaged_socket_switch
+  4: wall_crack_major
+  5: water_seepage_stain
+  6: damaged_furniture_joint
+  7: ac_drain_leak
+
+nc: 8
+version: 1.0.0
+target_total_images: 1200
+target_defect_images: 1020
+target_hard_negatives: 180
+hard_negative_ratio: 0.15

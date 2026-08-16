@@ -1,0 +1,19 @@
+[
+  {
+    "filename": "test_invalid_script.exe",
+    "reasons": [
+      "Unsupported file extension: .exe"
+    ],
+    "sha256": "668946bab9868b28489bb906205ee1026045c8bcd3ca62a1bdf733c65491351b"
+  },
+  {
+    "filename": "test_normal_pipe.jpg",
+    "reason": "Duplicate SHA-256 hash detected",
+    "sha256": "67820dee9bc88531835e9406b5d5c0036a5548fd47c002dcda9c30c889ba05d1"
+  },
+  {
+    "filename": "test_valid_leak.jpg",
+    "reason": "Duplicate SHA-256 hash detected",
+    "sha256": "67820dee9bc88531835e9406b5d5c0036a5548fd47c002dcda9c30c889ba05d1"
+  }
+]

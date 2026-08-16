@@ -1,0 +1,87 @@
+{
+  "dataset_version": "v1.0.0",
+  "policy": "Strict Commercial AI Training Verification Protocol",
+  "approved_sources": [
+    {
+      "source_name": "HiFix Worker App Original Collection",
+      "dataset_version": "v1.0.0",
+      "source_url": "internal://hifix-storage/original-captures",
+      "license": "HiFix Proprietary Consent Agreement",
+      "license_url": "internal://legal/worker-consent-v1.0",
+      "commercial_use": true,
+      "ml_training": true,
+      "attribution_required": false,
+      "redistribution_allowed": false,
+      "verification_status": "VERIFIED",
+      "verification_date": "2026-08-16",
+      "notes": "Worker opt-in consent agreement verified prior to ingestion."
+    },
+    {
+      "source_name": "COCO 2017 Dataset",
+      "dataset_version": "2017",
+      "source_url": "https://cocodataset.org/",
+      "license": "CC-BY 4.0",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/",
+      "commercial_use": true,
+      "ml_training": true,
+      "attribution_required": true,
+      "redistribution_allowed": true,
+      "verification_status": "VERIFIED",
+      "verification_date": "2026-08-16",
+      "notes": "Approved for 15% hard-negative baseline images (clean sinks, chairs, normal walls)."
+    },
+    {
+      "source_name": "Google Open Images V7",
+      "dataset_version": "V7",
+      "source_url": "https://storage.googleapis.com/openimages/web/index.html",
+      "license": "CC-BY 2.0",
+      "license_url": "https://creativecommons.org/licenses/by/2.0/",
+      "commercial_use": true,
+      "ml_training": true,
+      "attribution_required": true,
+      "redistribution_allowed": true,
+      "verification_status": "VERIFIED",
+      "verification_date": "2026-08-16",
+      "notes": "Approved for surface background context. Requires attribution notice in docs."
+    }
+  ],
+  "conditionally_approved_sources": [
+    {
+      "source_name": "Roboflow Universe (Verified CC-BY 4.0 Subsets)",
+      "dataset_version": "Variable",
+      "source_url": "https://universe.roboflow.com",
+      "license": "CC-BY 4.0",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/",
+      "commercial_use": true,
+      "ml_training": true,
+      "attribution_required": true,
+      "redistribution_allowed": true,
+      "verification_status": "PENDING_REVIEW",
+      "verification_date": "2026-08-16",
+      "notes": "Each individual repository must be checked for explicit CC-BY 4.0 license before ingestion."
+    }
+  ],
+  "rejected_sources": [
+    {
+      "source_name": "Roboflow Universe (CC-BY-NC 4.0 Subsets)",
+      "source_url": "https://universe.roboflow.com",
+      "license": "CC-BY-NC 4.0",
+      "verification_status": "REJECTED",
+      "notes": "Non-commercial CC-BY-NC 4.0 license is prohibited."
+    },
+    {
+      "source_name": "Kaggle Non-Commercial Surface Crack Sets",
+      "source_url": "https://www.kaggle.com/",
+      "license": "Research-Only / Non-Commercial",
+      "verification_status": "REJECTED",
+      "notes": "Research-only datasets are prohibited."
+    },
+    {
+      "source_name": "Unlicensed Web Images",
+      "source_url": "web://unverified",
+      "license": "UNKNOWN",
+      "verification_status": "REJECTED",
+      "notes": "Random web images without verifiable commercial license are prohibited."
+    }
+  ]
+}
