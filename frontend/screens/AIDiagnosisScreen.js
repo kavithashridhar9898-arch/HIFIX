@@ -70,7 +70,7 @@ export default function AIDiagnosisScreen({ navigation, route }) {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ['images'],
         allowsEditing: true,
-        quality: 0.8,
+        quality: 0.5,
       });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
@@ -102,7 +102,7 @@ export default function AIDiagnosisScreen({ navigation, route }) {
 
       const result = await ImagePicker.launchCameraAsync({
         allowsEditing: true,
-        quality: 0.8,
+        quality: 0.5,
       });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
