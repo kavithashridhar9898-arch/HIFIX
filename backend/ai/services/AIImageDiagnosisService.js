@@ -21,6 +21,7 @@
 
 const fs   = require('fs');
 const path = require('path');
+const AIGateway = require('../gateway/AIGateway');
 const { validateImageFile, imageToBase64, deleteImageNow } = require('../utils/imageSanitizer');
 const aiLogger = require('../utils/aiLogger');
 const AIUsageTracker = require('../monitoring/AIUsageTracker');

@@ -36,7 +36,7 @@ const aiLogger          = require('../utils/aiLogger');
 const AICache           = require('../cache/AICache');
 const AIMonitor         = require('../monitoring/AIMonitor');
 const AIUsageTracker    = require('../monitoring/AIUsageTracker');
-const promptRegistry    = require('../prompts/promptRegistry');
+const { promptRegistry } = require('../prompts/promptRegistry');
 
 // ── Retry helper ──────────────────────────────────────────────────────────────
 
