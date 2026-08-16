@@ -225,7 +225,7 @@ async function runTests() {
     assert(list.length === 6, 'promptRegistry.list() returns 6 entries', `${list.length} entries ✓`);
 
     const imageFeature = promptRegistry.get(AI_FEATURES.IMAGE_DIAGNOSIS);
-    assert(imageFeature.status === 'stub',          'IMAGE_DIAGNOSIS is a stub',          'status=stub ✓');
+    assert(imageFeature.status === 'active',        'IMAGE_DIAGNOSIS status is active (Phase 5.1)', 'status=active ✓');
     assert(imageFeature.requiresVision === true,    'IMAGE_DIAGNOSIS requires vision',    'requiresVision=true ✓');
     assert(imageFeature.outputFormat === 'json',    'IMAGE_DIAGNOSIS output is json',     'outputFormat=json ✓');
   } catch (err) {

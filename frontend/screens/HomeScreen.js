@@ -342,6 +342,30 @@ const HomeScreen = React.memo(function HomeScreen({ navigation }) {
             </View>
           </Animated.View>
 
+          {/* AI Problem Scanner Banner (Phase 5.1) */}
+          <Animated.View style={[styles.promoContainer, { opacity: fadeAnim, marginBottom: 16 }]}>
+            <TouchableOpacity activeOpacity={0.88} onPress={() => navigation.navigate('AIDiagnosis')}>
+              <LinearGradient 
+                colors={['rgba(56, 189, 248, 0.25)', 'rgba(139, 92, 246, 0.15)']} 
+                style={[styles.promoBanner, glassStyle, { borderColor: 'rgba(56, 189, 248, 0.4)' }]}
+                start={{x: 0, y: 0}} end={{x: 1, y: 1}}
+              >
+                <View style={styles.promoContent}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                    <View style={{ backgroundColor: '#38BDF8', borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 }}>
+                      <Text style={{ color: '#000', fontSize: 10, fontWeight: '800' }}>AI POWERED</Text>
+                    </View>
+                  </View>
+                  <Text style={[styles.promoTitle, { color: glassTextPrimary, fontSize: 18 }]}>Scan & Diagnose Issue</Text>
+                  <Text style={[styles.promoSub, { color: glassTextSecondary, fontSize: 13 }]}>Snap a photo for instant AI analysis & estimate.</Text>
+                </View>
+                <View style={[styles.promoIconWrapper, { backgroundColor: 'rgba(56,189,248,0.2)' }]}>
+                  <Icon name="center-focus-strong" size={32} color="#38BDF8" />
+                </View>
+              </LinearGradient>
+            </TouchableOpacity>
+          </Animated.View>
+
           {/* Promotional Banner */}
           <Animated.View style={[styles.promoContainer, { opacity: fadeAnim }]}>
             <LinearGradient 

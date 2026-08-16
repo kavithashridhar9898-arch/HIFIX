@@ -353,6 +353,12 @@ function RootNavigator() {
           getComponent={() => require('./screens/BlockchainAdminScreen').default}
           options={{ headerShown: false }}
         />
+        {/* ── Phase 5.1: AI Image Diagnosis ───────────────────────────── */}
+        <Stack.Screen
+          name="AIDiagnosis"
+          getComponent={() => require('./screens/AIDiagnosisScreen').default}
+          options={{ headerShown: false }}
+        />
       </Stack.Navigator>
     </>
   );

@@ -101,6 +101,8 @@ exports.status = async (req, res) => {
   }
 };
 
+const AIImageDiagnosisService = require('../services/AIImageDiagnosisService');
+
 // ── Image Upload (Infrastructure Only) ────────────────────────────────────────
 
 /**
@@ -109,7 +111,6 @@ exports.status = async (req, res) => {
  *
  * Phase 5.0: Accepts, validates, and stores the image securely.
  * Returns the upload receipt. Does NOT perform any AI diagnosis.
- * Diagnosis will be added in Phase 5.1 as a separate endpoint.
  */
 exports.uploadImage = async (req, res) => {
   // Validate any metadata fields
@@ -151,14 +152,14 @@ exports.uploadImage = async (req, res) => {
   aiLogger.info({
     requestId:  req.aiRequestId,
     feature:    'IMAGE_UPLOAD',
-    userId:     req.user.id,
+    userId:     req.user ? req.user.id : null,
     status:     'uploaded',
     message:    'AI image upload received and validated',
   });
 
   return res.status(201).json({
     success: true,
-    message: 'Image uploaded successfully. AI diagnosis is not yet available in this version.',
+    message: 'Image uploaded successfully. Use /api/ai/image-diagnosis for AI analysis.',
     data: {
       uploadId:       path.basename(req.file.path),
       filename:       req.file.filename,
@@ -167,8 +168,93 @@ exports.uploadImage = async (req, res) => {
       context,
       serviceTypeHint,
       status:         'uploaded',
-      diagnosisReady: false, // Will be true in Phase 5.1
-      note:           'Image has been validated and stored securely. AI diagnosis endpoint coming in Phase 5.1.',
+      diagnosisReady: true,
     },
   });
 };
+
+// ── AI Image Diagnosis (Phase 5.1) ───────────────────────────────────────────
+
+/**
+ * POST /api/ai/image-diagnosis
+ * Authenticated + Rate Limited (Image Tier)
+ *
+ * Receives an image upload, runs AI vision diagnosis via AIImageDiagnosisService & AIGateway,
+ * validates and normalizes output, returns safe preliminary diagnosis with INR costs.
+ */
+exports.diagnoseImage = async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      if (req.file) deleteImageNow(req.file.path);
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors:  errors.array(),
+      });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'No image file provided. Please attach an image under field name "image".',
+      });
+    }
+
+    const serviceContext  = req.body.serviceContext || req.body.context || '';
+    const locationContext = req.body.locationContext || '';
+
+    // Mock test mode parameter (passed in header or body during test runner)
+    let mockResult = null;
+    if (req.headers['x-ai-mock-diagnosis']) {
+      try {
+        mockResult = JSON.parse(req.headers['x-ai-mock-diagnosis']);
+      } catch (_) {}
+    } else if (req.body.mockResult) {
+      try {
+        mockResult = typeof req.body.mockResult === 'string'
+          ? JSON.parse(req.body.mockResult)
+          : req.body.mockResult;
+      } catch (_) {}
+    }
+
+    const result = await AIImageDiagnosisService.diagnose({
+      filePath:        req.file.path,
+      mimeType:        req.file.mimetype,
+      userId:          req.user ? req.user.id : null,
+      serviceContext,
+      locationContext,
+      mockResult,
+    });
+
+    if (!result.success) {
+      const errCategory = result.error?.category;
+      let statusCode = 400;
+      if (errCategory === 'RATE_LIMITED') statusCode = 429;
+      else if (errCategory === 'AI_DISABLED' || errCategory === 'PROVIDER_UNAVAILABLE') statusCode = 503;
+      else if (errCategory === 'TIMEOUT') statusCode = 504;
+
+      return res.status(statusCode).json({
+        success: false,
+        message: result.error?.message || 'AI diagnosis failed',
+        code:    errCategory || 'DIAGNOSIS_FAILED',
+        requestId: result.requestId,
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: 'AI diagnosis completed successfully',
+      data:    result.data,
+    });
+
+  } catch (err) {
+    if (req.file) deleteImageNow(req.file.path);
+    aiLogger.error({ feature: 'IMAGE_DIAGNOSIS', userId: req.user ? req.user.id : null, message: err.message });
+    return res.status(500).json({
+      success: false,
+      message: 'Internal server error during image diagnosis',
+    });
+  }
+};
+

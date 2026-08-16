@@ -73,9 +73,7 @@ router.get('/status', requireAuth, aiController.status);
  * POST /api/ai/image/upload
  * Authenticated + AI-enabled required + image rate limiting.
  *
- * Phase 5.0: Upload and validate only. No AI diagnosis performed.
- * Phase 5.1: Will add AI diagnosis trigger after upload.
- *
+ * Phase 5.0: Upload and validate only.
  * Field name: "image" (single file)
  */
 router.post(
@@ -86,6 +84,35 @@ router.post(
   aiUpload.single('image'),         // multer processes the file
   validateAIImageUpload,            // Validate metadata fields
   aiController.uploadImage
+);
+
+/**
+ * POST /api/ai/image-diagnosis
+ * Authenticated + AI-enabled required + image rate limiting.
+ *
+ * Phase 5.1: AI Image Diagnosis endpoint.
+ * Accepts image upload, performs vision AI analysis via AIGateway & AIImageDiagnosisService,
+ * returns structured diagnosis with INR indicative pricing and safety alerts.
+ */
+router.post(
+  '/image-diagnosis',
+  requireAuth,
+  requireAIEnabled,
+  aiRateLimiter({ isImage: true }),
+  aiUpload.single('image'),
+  validateAIImageUpload,
+  aiController.diagnoseImage
+);
+
+// Alias route for convenience
+router.post(
+  '/image/diagnose',
+  requireAuth,
+  requireAIEnabled,
+  aiRateLimiter({ isImage: true }),
+  aiUpload.single('image'),
+  validateAIImageUpload,
+  aiController.diagnoseImage
 );
 
 // ── Multer error handler (image upload specific) ──────────────────────────────
