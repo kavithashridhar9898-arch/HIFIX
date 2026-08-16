@@ -462,10 +462,55 @@ async function initializeDatabase() {
     }
 
     console.log('✅ Phase 4 Blockchain schema & Performance Indexes ready.');
+
+    // ── Phase 5: AI Infrastructure ────────────────────────────────────────────
+
+    // ai_requests — Audit log for every AI gateway request
+    // Stores only metadata (userId, feature, status, latency) — NOT prompts or outputs.
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS ai_requests (
+        id              INT AUTO_INCREMENT PRIMARY KEY,
+        request_id      VARCHAR(80) NOT NULL UNIQUE,
+        user_id         INT DEFAULT NULL,
+        feature         VARCHAR(50) NOT NULL,
+        provider        VARCHAR(50) NOT NULL DEFAULT 'unknown',
+        model           VARCHAR(100) NOT NULL DEFAULT 'unknown',
+        status          ENUM('pending','success','failure','timeout','rate_limited') NOT NULL,
+        latency_ms      INT DEFAULT NULL,
+        token_usage     INT DEFAULT NULL,
+        cost_usd        DECIMAL(10,6) DEFAULT NULL,
+        error_category  VARCHAR(50) DEFAULT NULL,
+        created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_air_user     (user_id),
+        INDEX idx_air_feature  (feature),
+        INDEX idx_air_status   (status),
+        INDEX idx_air_created  (created_at),
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+      ) ENGINE=InnoDB;
+    `);
+
+    // ai_cache — Persistent cache for AI responses (L2 tier)
+    // Only active when AI_CACHE_ENABLED=true. Inactive in Phase 5.0.
+    // Cache keys are SHA-256 hashes — raw prompts are never stored as keys.
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS ai_cache (
+        id          INT AUTO_INCREMENT PRIMARY KEY,
+        cache_key   VARCHAR(80) NOT NULL UNIQUE,
+        feature     VARCHAR(50) NOT NULL,
+        response    JSON NOT NULL,
+        expires_at  DATETIME NOT NULL,
+        created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_aic_key     (cache_key),
+        INDEX idx_aic_feature (feature),
+        INDEX idx_aic_expires (expires_at)
+      ) ENGINE=InnoDB;
+    `);
+
+    console.log('✅ Phase 5 AI Infrastructure schema ready.');
   } catch (error) {
     console.error('❌ Database initialization error:', error);
     process.exit(1);
   }
 }
 
-module.exports = initializeDatabase;
+module.exports = initializeDatabase;

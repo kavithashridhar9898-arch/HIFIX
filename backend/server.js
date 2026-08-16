@@ -75,6 +75,13 @@ app.use('/api/work-timer', require('./routes/workTimer'));
 app.use('/api/invoice', require('./routes/invoiceRequests'));
 app.use('/api/blockchain', require('./routes/blockchain'));
 
+// ── Phase 5: AI Infrastructure ────────────────────────────────────────────────
+// AI route always loads (for /api/ai/health public endpoint) but all feature
+// endpoints internally guard with AI_ENABLED. The health endpoint is always
+// available so monitoring systems can detect whether AI is configured.
+app.use('/api/ai', require('./ai/routes/ai'));
+// ─────────────────────────────────────────────────────────────────────────────
+
 // Socket.io connection
 io.on('connection', (socket) => {
   console.log('✅ A user connected to sockets');
