@@ -1,0 +1,20 @@
+{
+  "image_id": "batch001_defect_c2_019",
+  "batch_id": "batch-001",
+  "source_type": "open_source_verified",
+  "source_name": "COCO 2017 Dataset",
+  "source_url": "https://hifix.internal/datasets/batch001/batch001_defect_c2_019.jpg",
+  "license": "CC-BY 4.0",
+  "license_url": "https://creativecommons.org/licenses/by/4.0/",
+  "commercial_use_approved": true,
+  "ml_training_approved": true,
+  "attribution_required": true,
+  "collection_date": "2026-08-16T20:50:00Z",
+  "class_id": 2,
+  "class_label": "exposed_wire",
+  "annotator_id": "annotator_qa_02",
+  "consent_status": "NOT_APPLICABLE",
+  "privacy_sanitized": true,
+  "exif_stripped": true,
+  "dataset_version": "v1.0.0"
+}

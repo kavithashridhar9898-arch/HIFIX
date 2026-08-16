@@ -1,12 +1,12 @@
 # HiFix Vision Dataset v1.0.0 Validation Report
 
-Generated At: 2026-08-16T20:47:31.822Z
+Generated At: 2026-08-16T20:54:41.754Z
 
 ## Executive Summary
 - **Dataset Version**: `v1.0.0`
 - **Target Size**: 1,200 images (1,020 defect + 180 hard negatives)
 - **Current Total Verified Images**: 121
-- **Sanitized Workspace Images**: 121
+- **Sanitized Workspace Images**: 361
 - **Quarantined / Rejected Images**: 3
 
 ---

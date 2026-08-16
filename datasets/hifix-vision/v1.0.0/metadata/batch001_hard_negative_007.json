@@ -1,0 +1,20 @@
+{
+  "image_id": "batch001_hard_negative_007",
+  "batch_id": "batch-001",
+  "source_type": "hifix_original",
+  "source_name": "HiFix Worker App Original Collection",
+  "source_url": "https://hifix.internal/datasets/batch001/batch001_hard_negative_007.jpg",
+  "license": "HiFix Proprietary Consent",
+  "license_url": "internal://legal/worker-consent-v1.0",
+  "commercial_use_approved": true,
+  "ml_training_approved": true,
+  "attribution_required": false,
+  "collection_date": "2026-08-16T20:50:00Z",
+  "hard_negative": true,
+  "class_label": "hard_negative",
+  "annotator_id": "annotator_qa_02",
+  "consent_status": "CONSENT_VERIFIED",
+  "privacy_sanitized": true,
+  "exif_stripped": true,
+  "dataset_version": "v1.0.0"
+}

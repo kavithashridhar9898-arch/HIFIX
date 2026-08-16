@@ -1,0 +1,38 @@
+{
+  "batch_id": "batch-001",
+  "dataset_version": "v1.0.0",
+  "image_count": 240,
+  "positive_count": 200,
+  "hard_negative_count": 40,
+  "combined_total_images": 360,
+  "combined_positive_images": 296,
+  "combined_hard_negatives": 64,
+  "class_counts": {
+    "visible_pipe_leak": 25,
+    "faucet_drain_leak": 25,
+    "exposed_wire": 25,
+    "damaged_socket_switch": 25,
+    "wall_crack_major": 25,
+    "water_seepage_stain": 25,
+    "damaged_furniture_joint": 25,
+    "ac_drain_leak": 25
+  },
+  "source_counts": {
+    "HiFix Worker App Original Collection": 120,
+    "COCO 2017 Dataset (CC-BY 4.0)": 72,
+    "Google Open Images V7 (CC-BY 2.0)": 48
+  },
+  "license_counts": {
+    "HiFix Proprietary Consent": 120,
+    "CC-BY 4.0": 72,
+    "CC-BY 2.0": 48
+  },
+  "consent_verified_count": 120,
+  "privacy_review_count": 240,
+  "duplicate_count": 0,
+  "quarantine_count": 0,
+  "annotation_count": 240,
+  "qa_pass_count": 240,
+  "qa_fail_count": 0,
+  "created_at": "2026-08-16T20:54:42.937Z"
+}
