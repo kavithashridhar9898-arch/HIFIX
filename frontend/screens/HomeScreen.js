@@ -342,7 +342,7 @@ const HomeScreen = React.memo(function HomeScreen({ navigation }) {
             </View>
           </Animated.View>
 
-          {/* AI Problem Scanner Banner (Phase 5.1) */}
+          {/* AI Problem Scanner Banner (Phase 5.1 & Phase 5.1B Live POC) */}
           <Animated.View style={[styles.promoContainer, { opacity: fadeAnim, marginBottom: 16 }]}>
             <TouchableOpacity activeOpacity={0.88} onPress={() => navigation.navigate('AIDiagnosis')}>
               <LinearGradient 
@@ -355,6 +355,12 @@ const HomeScreen = React.memo(function HomeScreen({ navigation }) {
                     <View style={{ backgroundColor: '#38BDF8', borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 }}>
                       <Text style={{ color: '#000', fontSize: 10, fontWeight: '800' }}>AI POWERED</Text>
                     </View>
+                    <TouchableOpacity
+                      style={{ backgroundColor: 'rgba(16, 185, 129, 0.2)', borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2, borderWidth: 1, borderColor: '#10B981' }}
+                      onPress={(e) => { e.stopPropagation(); navigation.navigate('LiveCameraPOC'); }}
+                    >
+                      <Text style={{ color: '#10B981', fontSize: 10, fontWeight: '800' }}>LIVE CAMERA POC</Text>
+                    </TouchableOpacity>
                   </View>
                   <Text style={[styles.promoTitle, { color: glassTextPrimary, fontSize: 18 }]}>Scan & Diagnose Issue</Text>
                   <Text style={[styles.promoSub, { color: glassTextSecondary, fontSize: 13 }]}>Snap a photo for instant AI analysis & estimate.</Text>

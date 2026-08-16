@@ -359,6 +359,12 @@ function RootNavigator() {
           getComponent={() => require('./screens/AIDiagnosisScreen').default}
           options={{ headerShown: false }}
         />
+        {/* ── Phase 5.1B: Live AI Camera POC ─────────────────────────── */}
+        <Stack.Screen
+          name="LiveCameraPOC"
+          getComponent={() => require('./screens/LiveCameraPOCScreen').default}
+          options={{ headerShown: false }}
+        />
       </Stack.Navigator>
     </>
   );
