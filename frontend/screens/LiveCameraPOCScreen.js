@@ -459,7 +459,7 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    justify.content: 'center',
+    justifyContent: 'center',
     gap: 8,
     height: 50,
     borderRadius: 16,
