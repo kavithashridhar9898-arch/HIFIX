@@ -3,7 +3,7 @@ require('dotenv').config();
 
 // Create connection pool tuned for production throughput
 const pool = mysql.createPool({
-  host: process.env.DB_HOST || '192.168.189.251',
+  host: process.env.DB_HOST || '192.168.154.251',
   user: process.env.DB_USER || 'root',
   password: process.env.DB_PASSWORD||'@Gunther89089',
   database: process.env.DB_NAME || 'hifix_db',

@@ -136,7 +136,7 @@ initializeDatabase()
 
     server.listen(PORT, HOST, () => {
       console.log(`🚀 Server running on ${HOST}:${PORT}`);
-      console.log(`📱 Accessible at http://192.168.189.251:${PORT}`);
+      console.log(`📱 Accessible at http://192.168.154.251:${PORT}`);
     });
   })
   .catch(err => {

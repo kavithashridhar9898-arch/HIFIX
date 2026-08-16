@@ -16,7 +16,7 @@ let SOCKET_URL = API_BASE_URL.replace(/\/api$/, '');
 
 // Fallback heuristics if API_BASE_URL wasn't set
 if (!SOCKET_URL || SOCKET_URL.length === 0) {
-  SOCKET_URL = Platform.OS === 'web' ? 'http://localhost:5000' : 'http://192.168.189.251:5000';
+  SOCKET_URL = Platform.OS === 'web' ? 'http://localhost:5000' : 'http://192.168.154.251:5000';
 }
 
 export const SocketProvider = ({ children }) => {
