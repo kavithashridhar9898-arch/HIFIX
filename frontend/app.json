@@ -33,8 +33,10 @@
       "permissions": [
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION",
+        "CAMERA",
         "android.permission.ACCESS_COARSE_LOCATION",
-        "android.permission.ACCESS_FINE_LOCATION"
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.CAMERA"
       ],
       "versionCode": 2
     },
@@ -43,6 +45,13 @@
     },
     "jsEngine": "hermes",
     "plugins": [
+      [
+        "react-native-vision-camera",
+        {
+          "cameraPermissionText": "Allow HiFix to use the camera for live AI problem diagnosis.",
+          "enableMicrophonePermission": false
+        }
+      ],
       [
         "expo-location",
         {
@@ -64,7 +73,8 @@
             "enableShrinkResourcesInReleaseBuilds": true
           }
         }
-      ]
+      ],
+      "onnxruntime-react-native"
     ],
     "extra": {
       "eas": {
