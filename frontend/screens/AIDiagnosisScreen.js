@@ -19,7 +19,7 @@ import * as ImagePicker from 'expo-image-picker';
 import api from '../config/api';
 import { useTheme } from '../context/ThemeContext';
 import PremiumBackground from '../components/PremiumBackground';
-import { LiveAIInferenceEngine, Detection, APPROVED_CLASSES } from '../src/services/liveAIInferenceService';
+import { LiveAIInferenceEngine, APPROVED_CLASSES } from '../services/liveAIInferenceService';
 
 const { width } = Dimensions.get('window');
 
