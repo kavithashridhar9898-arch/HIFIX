@@ -1,0 +1,6 @@
+{
+  "checkpoint": "yolo11n_hifix_pilot_epoch27.onnx",
+  "size_bytes": 2936000,
+  "sha256": "56bd320a4661759c16bd682fc3d461f6c5e4ee11457900118c98a4922a725cee",
+  "status": "OFFLINE_EXPERIMENT_ONLY"
+}
