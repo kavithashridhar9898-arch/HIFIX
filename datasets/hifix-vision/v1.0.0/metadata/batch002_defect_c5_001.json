@@ -1,0 +1,22 @@
+{
+  "image_id": "batch002_defect_c5_001",
+  "batch_id": "batch-002",
+  "source_type": "hifix_original",
+  "source_name": "HiFix Worker App Original Collection",
+  "source_url": "https://hifix.internal/datasets/batch002/batch002_defect_c5_001.jpg",
+  "license": "HiFix Proprietary Consent",
+  "license_url": "internal://legal/worker-consent-v1.0",
+  "commercial_use_approved": true,
+  "ml_training_approved": true,
+  "attribution_required": false,
+  "collection_date": "2026-08-17T10:00:00Z",
+  "class_id": 5,
+  "class_label": "water_seepage_stain",
+  "annotator_id": "annotator_qa_03",
+  "consent_status": "CONSENT_VERIFIED",
+  "privacy_sanitized": true,
+  "exif_stripped": true,
+  "environment_tag": "commercial_utility",
+  "camera_angle": "eye_level",
+  "dataset_version": "v1.0.0"
+}
