@@ -1,0 +1,22 @@
+{
+  "image_id": "batch004_defect_c6_018",
+  "batch_id": "batch-004",
+  "source_type": "open_source_verified",
+  "source_name": "Google Open Images V7",
+  "source_url": "https://hifix.internal/datasets/batch004/batch004_defect_c6_018.jpg",
+  "license": "CC-BY 2.0",
+  "license_url": "https://creativecommons.org/licenses/by/2.0/",
+  "commercial_use_approved": true,
+  "ml_training_approved": true,
+  "attribution_required": true,
+  "collection_date": "2026-08-17T11:30:00Z",
+  "class_id": 6,
+  "class_label": "damaged_furniture_joint",
+  "annotator_id": "annotator_qa_05",
+  "consent_status": "NOT_APPLICABLE",
+  "privacy_sanitized": true,
+  "exif_stripped": true,
+  "environment_tag": "indoor_residential",
+  "difficulty_level": "moderate",
+  "dataset_version": "v1.0.0"
+}
