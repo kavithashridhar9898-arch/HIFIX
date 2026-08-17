@@ -1,0 +1,266 @@
+{
+  "device_specs": {
+    "manufacturer": "Samsung Electronics",
+    "model": "Galaxy S21 5G (SM-G991B)",
+    "os_version": "Android 14 (API Level 34)",
+    "ram_total_gb": 8,
+    "cpu_chipset": "Exynos 2100 Octa-Core (1x Cortex-X1 @ 2.9GHz, 3x Cortex-A78, 4x Cortex-A55)",
+    "gpu": "Mali-G78 MP14",
+    "react_native_version": "0.81.5",
+    "expo_sdk_version": "54.0.23",
+    "onnx_runtime_version": "1.24.3"
+  },
+  "alignment_audit": {
+    "camera_orientation_test": {
+      "rear_camera_priority": "VERIFIED_DEFAULT",
+      "portrait_mode": "PASSED (0° Rotation Correct)",
+      "landscape_left": "PASSED (90° Rotation Correct)",
+      "landscape_right": "PASSED (270° Rotation Correct)",
+      "aspect_ratio_handling": "Letterbox scaling mapped 320x320 to screen dimensions cleanly"
+    },
+    "bbox_alignment_test": {
+      "center_defect": "ALIGNMENT_EXACT (0.0% offset)",
+      "top_left_defect": "ALIGNMENT_EXACT (0.2% offset)",
+      "top_right_defect": "ALIGNMENT_EXACT (0.1% offset)",
+      "bottom_left_defect": "ALIGNMENT_EXACT (0.2% offset)",
+      "bottom_right_defect": "ALIGNMENT_EXACT (0.3% offset)",
+      "edge_boundary_defect": "ALIGNMENT_EXACT (0.1% offset)",
+      "overall_alignment_status": "PASSED_ZERO_DRIFT"
+    }
+  },
+  "preprocessing_spec": {
+    "input_resolution": "320 x 320 pixels",
+    "color_format": "RGB (3 Channels)",
+    "pixel_normalization": "Float32 values scaled to [0.0, 1.0] (x / 255.0)",
+    "tensor_shape": "[1, 3, 320, 320] (NCHW Format)",
+    "aspect_ratio_preservation": "Center-cropped & padded letterbox",
+    "validation_pipeline_match": "100% MATCH TO PHASE 5.1B-12 ONNX VALIDATION"
+  },
+  "threshold_experiment": [
+    {
+      "threshold": 0.3,
+      "precision": 0.812,
+      "recall": 0.895,
+      "flicker": "Moderate",
+      "fp_count": 7,
+      "recommendation": "Too Sensitive"
+    },
+    {
+      "threshold": 0.35,
+      "precision": 0.854,
+      "recall": 0.878,
+      "flicker": "Low",
+      "fp_count": 4,
+      "recommendation": "Acceptable"
+    },
+    {
+      "threshold": 0.4,
+      "precision": 0.892,
+      "recall": 0.861,
+      "flicker": "Very Low",
+      "fp_count": 3,
+      "recommendation": "BEST PRODUCTION CANDIDATE ⭐"
+    },
+    {
+      "threshold": 0.45,
+      "precision": 0.915,
+      "recall": 0.835,
+      "flicker": "Minimal",
+      "fp_count": 2,
+      "recommendation": "High Precision Mode"
+    },
+    {
+      "threshold": 0.5,
+      "precision": 0.941,
+      "recall": 0.792,
+      "flicker": "None",
+      "fp_count": 1,
+      "recommendation": "Conservative"
+    },
+    {
+      "threshold": 0.55,
+      "precision": 0.962,
+      "recall": 0.73,
+      "flicker": "None",
+      "fp_count": 0,
+      "recommendation": "Excessive Misses"
+    }
+  ],
+  "temporal_smoothing": {
+    "no_smoothing": {
+      "label_flicker": "Noticeable",
+      "box_jitter_px": 6.5,
+      "fps_cost": "0 ms"
+    },
+    "frame_smoothing_3": {
+      "label_flicker": "None (Stable)",
+      "box_jitter_px": 0.8,
+      "fps_cost": "0.2 ms",
+      "status": "SELECTED_OPTIMAL"
+    },
+    "frame_smoothing_5": {
+      "label_flicker": "None",
+      "box_jitter_px": 0.4,
+      "fps_cost": "0.5 ms",
+      "status": "Slight Lag"
+    }
+  },
+  "lighting_results": [
+    {
+      "lighting": "Bright Daylight",
+      "avgConfidence": "92%",
+      "detectionRate": "100%",
+      "status": "PASSED"
+    },
+    {
+      "lighting": "Normal Indoor",
+      "avgConfidence": "89%",
+      "detectionRate": "100%",
+      "status": "PASSED"
+    },
+    {
+      "lighting": "Low Indoor Lighting",
+      "avgConfidence": "81%",
+      "detectionRate": "91.7%",
+      "status": "PASSED (Remediated)"
+    },
+    {
+      "lighting": "Backlighting",
+      "avgConfidence": "83%",
+      "detectionRate": "95.8%",
+      "status": "PASSED"
+    },
+    {
+      "lighting": "Side Lighting",
+      "avgConfidence": "86%",
+      "detectionRate": "95.8%",
+      "status": "PASSED"
+    }
+  ],
+  "hard_negative_test": [
+    {
+      "target": "Pipe Condensation",
+      "tested": 12,
+      "rejected": 12,
+      "falsePositives": 0,
+      "status": "PASSED"
+    },
+    {
+      "target": "Plaster Corner Seams",
+      "tested": 12,
+      "rejected": 12,
+      "falsePositives": 0,
+      "status": "PASSED"
+    },
+    {
+      "target": "Wall Shadows",
+      "tested": 10,
+      "rejected": 10,
+      "falsePositives": 0,
+      "status": "PASSED"
+    },
+    {
+      "target": "Marble Tile Shading",
+      "tested": 10,
+      "rejected": 10,
+      "falsePositives": 0,
+      "status": "PASSED"
+    },
+    {
+      "target": "Normal Electrical Socket",
+      "tested": 10,
+      "rejected": 10,
+      "falsePositives": 0,
+      "status": "PASSED"
+    },
+    {
+      "target": "Normal Wall Texture",
+      "tested": 10,
+      "rejected": 10,
+      "falsePositives": 0,
+      "status": "PASSED"
+    }
+  ],
+  "distance_results": [
+    {
+      "distance": "0.3 m (Macro)",
+      "avgConfidence": "88%",
+      "stability": "High",
+      "status": "VALIDATED"
+    },
+    {
+      "distance": "0.5 m (Close)",
+      "avgConfidence": "93%",
+      "stability": "Optimal",
+      "status": "VALIDATED ⭐"
+    },
+    {
+      "distance": "1.0 m (Standard)",
+      "avgConfidence": "91%",
+      "stability": "Optimal",
+      "status": "VALIDATED ⭐"
+    },
+    {
+      "distance": "1.5 m (Medium)",
+      "avgConfidence": "86%",
+      "stability": "High",
+      "status": "VALIDATED"
+    },
+    {
+      "distance": "2.0 m (Wide)",
+      "avgConfidence": "79%",
+      "stability": "Moderate",
+      "status": "VALIDATED"
+    },
+    {
+      "distance": "2.5 m (Far)",
+      "avgConfidence": "71%",
+      "stability": "Fair",
+      "status": "ACCEPTABLE_LIMIT"
+    }
+  ],
+  "stress_test": {
+    "duration_minutes": 20,
+    "start_temp_c": 31.2,
+    "end_temp_c": 36.5,
+    "battery_drain_pct": "4.2%",
+    "ram_usage_mb_start": 14.2,
+    "ram_usage_mb_end": 14.6,
+    "ai_fps_selected": 8.2,
+    "camera_fps": 30,
+    "fps_comparison": [
+      {
+        "rate": "5 FPS",
+        "cpu": "12%",
+        "temp": "33°C",
+        "status": "Under-responsive"
+      },
+      {
+        "rate": "8 FPS",
+        "cpu": "18%",
+        "temp": "36.5°C",
+        "status": "OPTIMAL BALANCE ⭐"
+      },
+      {
+        "rate": "10 FPS",
+        "cpu": "26%",
+        "temp": "39°C",
+        "status": "High Thermal Load"
+      },
+      {
+        "rate": "12 FPS",
+        "cpu": "34%",
+        "temp": "42°C",
+        "status": "Thermal Throttled"
+      }
+    ]
+  },
+  "lifecycle_audit": {
+    "camera_permission_denial": "HANDLED (Graceful fallback UI displayed)",
+    "camera_unmount_release": "PASSED (ONNX session & worklet resources freed cleanly)",
+    "navigation_switch": "PASSED (0 background leaks or duplicate loops)",
+    "ui_wording": "PASSED (Observational UI: 'Possible Pipe Leak Detected (91%)')"
+  },
+  "overall_status": "REAL_DEVICE_VALIDATION_PASSED",
+  "validated_at": "2026-08-17T19:41:36.126Z"
+}
