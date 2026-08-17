@@ -1,12 +1,12 @@
 # HiFix Vision Dataset v1.0.0 Validation Report
 
-Generated At: 2026-08-17T10:07:26.469Z
+Generated At: 2026-08-17T11:23:42.836Z
 
 ## Executive Summary
 - **Dataset Version**: `v1.0.0`
 - **Target Size**: 1,200 images (1,020 defect + 180 hard negatives)
-- **Current Total Verified Images**: 451
-- **Sanitized Workspace Images**: 601
+- **Current Total Verified Images**: 739
+- **Sanitized Workspace Images**: 802
 - **Quarantined / Rejected Images**: 3
 
 ---
@@ -29,9 +29,9 @@ Generated At: 2026-08-17T10:07:26.469Z
 
 ## 2. Dataset Split Breakdown
 
-- **Train Split (70%)**: 324 images
-- **Val Split (15%)**: 72 images
-- **Test Split (15%)**: 55 images
+- **Train Split (70%)**: 504 images
+- **Val Split (15%)**: 144 images
+- **Test Split (15%)**: 91 images
 
 ---
 

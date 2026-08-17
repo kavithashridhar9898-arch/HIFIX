@@ -1,14 +1,14 @@
 {
   "dataset_version": "v1.0.0",
-  "total_images": 600,
-  "positive_images": 496,
-  "hard_negative_images": 104,
-  "hard_negative_percentage": "17.3%",
+  "total_images": 800,
+  "positive_images": 666,
+  "hard_negative_images": 134,
+  "hard_negative_percentage": "16.75%",
   "splits": {
-    "train": 420,
-    "val": 90,
-    "test": 90
+    "train": 560,
+    "val": 120,
+    "test": 120
   },
-  "verified_images": 600,
-  "updated_at": "2026-08-17T10:07:27.883Z"
+  "verified_images": 800,
+  "updated_at": "2026-08-17T11:23:50.594Z"
 }
