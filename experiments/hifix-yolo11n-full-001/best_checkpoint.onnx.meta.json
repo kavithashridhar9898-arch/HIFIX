@@ -1,0 +1,6 @@
+{
+  "checkpoint": "yolo11n_hifix_full_epoch34.onnx",
+  "size_bytes": 2942000,
+  "sha256": "5263a6485e81edda58137aa0eaafaa37a67f407522719f1c44a548445bc13d85",
+  "status": "OFFLINE_TRAINING_COMPLETE"
+}
