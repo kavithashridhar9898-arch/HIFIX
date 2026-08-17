@@ -1,0 +1,21 @@
+{
+  "image_id": "batch005_hard_negative_006",
+  "batch_id": "batch-005",
+  "source_type": "hifix_original",
+  "source_name": "HiFix Worker App Original Collection",
+  "source_url": "https://hifix.internal/datasets/batch005/batch005_hard_negative_006.jpg",
+  "license": "HiFix Proprietary Consent",
+  "license_url": "internal://legal/worker-consent-v1.0",
+  "commercial_use_approved": true,
+  "ml_training_approved": true,
+  "attribution_required": false,
+  "collection_date": "2026-08-17T11:35:00Z",
+  "hard_negative": true,
+  "negative_type": "pipe_condensation",
+  "class_label": "hard_negative",
+  "annotator_id": "annotator_qa_06",
+  "consent_status": "CONSENT_VERIFIED",
+  "privacy_sanitized": true,
+  "exif_stripped": true,
+  "dataset_version": "v1.0.0"
+}

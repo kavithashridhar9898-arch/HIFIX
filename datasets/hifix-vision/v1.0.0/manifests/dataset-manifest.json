@@ -1,14 +1,26 @@
 {
   "dataset_version": "v1.0.0",
-  "total_images": 1001,
-  "positive_images": 837,
-  "hard_negative_images": 164,
-  "hard_negative_percentage": "16.38%",
+  "total_images": 1200,
+  "positive_images": 1010,
+  "hard_negative_images": 190,
+  "hard_negative_percentage": "15.83%",
   "splits": {
-    "train": 701,
-    "val": 150,
-    "test": 150
+    "train": 840,
+    "val": 180,
+    "test": 180
   },
-  "verified_images": 1001,
-  "updated_at": "2026-08-17T11:32:00.146Z"
+  "class_breakdown": {
+    "visible_pipe_leak": 120,
+    "faucet_drain_leak": 119,
+    "exposed_wire": 119,
+    "damaged_socket_switch": 119,
+    "wall_crack_major": 120,
+    "water_seepage_stain": 162,
+    "damaged_furniture_joint": 119,
+    "ac_drain_leak": 132,
+    "hard_negatives": 190
+  },
+  "verified_images": 1200,
+  "status": "1,200 MVP DATASET ACQUISITION COMPLETE",
+  "updated_at": "2026-08-17T11:39:16.141Z"
 }
