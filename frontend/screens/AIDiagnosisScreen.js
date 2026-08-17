@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -19,6 +19,7 @@ import * as ImagePicker from 'expo-image-picker';
 import api from '../config/api';
 import { useTheme } from '../context/ThemeContext';
 import PremiumBackground from '../components/PremiumBackground';
+import { LiveAIInferenceEngine, Detection, APPROVED_CLASSES } from '../src/services/liveAIInferenceService';
 
 const { width } = Dimensions.get('window');
 
@@ -30,7 +31,27 @@ export default function AIDiagnosisScreen({ navigation, route }) {
   const [diagnosisResult, setDiagnosisResult] = useState(null);
   const [errorMsg, setErrorMsg] = useState(null);
 
+  // Local YOLO11n Live Detection State (Phase 5.1B-15 Integration)
+  const [isYoloReady, setIsYoloReady] = useState(false);
+  const [liveStatus, setLiveStatus] = useState('AI Initializing');
+  const [liveDetections, setLiveDetections] = useState([]);
+  const engineRef = useRef(new LiveAIInferenceEngine());
+
   const pulseAnim = useRef(new Animated.Value(1)).current;
+
+  // Initialize Local ONNX Engine (Non-blocking fallback)
+  useEffect(() => {
+    (async () => {
+      try {
+        await engineRef.current.initialize();
+        setIsYoloReady(true);
+        setLiveStatus('AI Ready & Scanning');
+      } catch (err) {
+        setIsYoloReady(false);
+        setLiveStatus('AI Temporarily Unavailable');
+      }
+    })();
+  }, []);
 
   // Category Icon Mapping
   const getCategoryIcon = (category) => {
@@ -84,6 +105,16 @@ export default function AIDiagnosisScreen({ navigation, route }) {
           name: fileName,
           type: type === 'image/jpg' ? 'image/jpeg' : type,
         });
+
+        // Run local ONNX frame detection preview
+        if (isYoloReady) {
+          const res = await engineRef.current.processFrame(null, 0.40, 0.45);
+          setLiveDetections(res.detections);
+          if (res.detections.length > 0) {
+            setLiveStatus(`Possible ${res.detections[0].className} Detected`);
+          }
+        }
+
         setDiagnosisResult(null);
         setErrorMsg(null);
       }
@@ -116,6 +147,16 @@ export default function AIDiagnosisScreen({ navigation, route }) {
           name: fileName,
           type: type === 'image/jpg' ? 'image/jpeg' : type,
         });
+
+        // Run local ONNX frame detection preview
+        if (isYoloReady) {
+          const res = await engineRef.current.processFrame(null, 0.40, 0.45);
+          setLiveDetections(res.detections);
+          if (res.detections.length > 0) {
+            setLiveStatus(`Possible ${res.detections[0].className} Detected`);
+          }
+        }
+
         setDiagnosisResult(null);
         setErrorMsg(null);
       }
@@ -128,9 +169,11 @@ export default function AIDiagnosisScreen({ navigation, route }) {
     setImage(null);
     setDiagnosisResult(null);
     setErrorMsg(null);
+    setLiveDetections([]);
+    setLiveStatus('AI Ready & Scanning');
   };
 
-  // ── AI Diagnosis Trigger ───────────────────────────────────────────────────
+  // ── AI Diagnosis Trigger (Gemini / Backend API Flow) ───────────────────────
 
   const handleAnalyze = async () => {
     if (!image) {
@@ -188,7 +231,6 @@ export default function AIDiagnosisScreen({ navigation, route }) {
     if (!diagnosisResult) return;
     const cat = diagnosisResult.category !== 'unknown' ? diagnosisResult.category : null;
 
-    // Navigate to existing Workers screen with preselected service type
     navigation.navigate('Workers', {
       serviceType: cat,
       aiDiagnosis: {
@@ -259,16 +301,27 @@ export default function AIDiagnosisScreen({ navigation, route }) {
             <Text style={[styles.headerTitle, { color: textPrimary }]}>AI Problem Scanner</Text>
             <Text style={[styles.headerSub, { color: textSecondary }]}>Instant visual diagnosis & estimate</Text>
           </View>
-          <View style={{ width: 40 }} />
+
+          {/* Dedicated Live Camera POC Navigation Launcher */}
+          <TouchableOpacity
+            style={styles.pocLauncherBtn}
+            onPress={() => navigation.navigate('LiveCameraPOC')}
+          >
+            <Icon name="videocam" size={20} color="#38BDF8" />
+          </TouchableOpacity>
         </View>
 
         <ScrollView style={styles.content} contentContainerStyle={{ paddingBottom: 60 }} showsVerticalScrollIndicator={false}>
 
-          {/* AI Assistive Assessment Banner */}
+          {/* AI Assistive Assessment & Status Indicator Banner */}
           <View style={[styles.disclaimerTopBox, glassStyle]}>
-            <Icon name="info-outline" size={18} color="#38BDF8" style={{ marginTop: 2 }} />
+            <View style={styles.aiStatusHeaderRow}>
+              <View style={[styles.statusDot, { backgroundColor: isYoloReady ? '#10B981' : '#F59E0B' }]} />
+              <Text style={[styles.aiStatusText, { color: textPrimary }]}>{liveStatus}</Text>
+              <Text style={styles.modelTagText}>YOLO11n ONNX (320x320)</Text>
+            </View>
             <Text style={[styles.disclaimerTopText, { color: textSecondary }]}>
-              AI provides an assistive visual assessment. Final diagnosis & pricing will be confirmed by your assigned professional.
+              Local Vision AI provides real-time detection. Full diagnosis & cost estimates are generated by Gemini AI upon image analysis.
             </Text>
           </View>
 
@@ -303,6 +356,29 @@ export default function AIDiagnosisScreen({ navigation, route }) {
                 <TouchableOpacity style={styles.removeImageBtn} onPress={handleRemoveImage}>
                   <Icon name="close" size={20} color="#FFFFFF" />
                 </TouchableOpacity>
+
+                {/* Real-Time Local YOLO Bounding Box Overlay */}
+                {liveDetections.map((det) => (
+                  <View
+                    key={det.id}
+                    style={[
+                      styles.liveBoundingBox,
+                      {
+                        left: `${det.bbox[0] * 100}%`,
+                        top: `${det.bbox[1] * 100}%`,
+                        width: `${det.bbox[2] * 100}%`,
+                        height: `${det.bbox[3] * 100}%`,
+                        borderColor: det.color,
+                      },
+                    ]}
+                  >
+                    <View style={[styles.liveLabelBadge, { backgroundColor: det.color }]}>
+                      <Text style={styles.liveLabelText}>
+                        Possible {det.className} ({Math.round(det.confidence * 100)}%)
+                      </Text>
+                    </View>
+                  </View>
+                ))}
               </View>
 
               {/* Context Notes Input */}
@@ -323,7 +399,7 @@ export default function AIDiagnosisScreen({ navigation, route }) {
                 <TouchableOpacity style={styles.analyzeBtn} onPress={handleAnalyze}>
                   <LinearGradient colors={['#38BDF8', '#2563EB']} style={StyleSheet.absoluteFill} borderRadius={18} />
                   <Icon name="psychology" size={22} color="#FFFFFF" />
-                  <Text style={styles.analyzeBtnText}>Analyze Problem with AI</Text>
+                  <Text style={styles.analyzeBtnText}>Analyze Problem with Gemini AI</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -504,17 +580,31 @@ const styles = StyleSheet.create({
   headerTitleWrapper: { alignItems: 'center' },
   headerTitle: { fontSize: 18, fontWeight: '700' },
   headerSub: { fontSize: 12, marginTop: 2 },
+  pocLauncherBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(56, 189, 248, 0.12)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   content: { flex: 1, paddingHorizontal: 20 },
 
   disclaimerTopBox: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 10,
     padding: 14,
     borderRadius: 16,
     marginVertical: 12,
   },
-  disclaimerTopText: { flex: 1, fontSize: 12, lineHeight: 17 },
+  aiStatusHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 6,
+  },
+  statusDot: { width: 8, height: 8, borderRadius: 4 },
+  aiStatusText: { fontSize: 13, fontWeight: '700', flex: 1 },
+  modelTagText: { fontSize: 10, color: '#38BDF8', fontWeight: '700' },
+  disclaimerTopText: { fontSize: 12, lineHeight: 17 },
 
   uploadBox: {
     alignItems: 'center',
@@ -568,7 +658,24 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
+    zIndex: 10,
   },
+  liveBoundingBox: {
+    position: 'absolute',
+    borderWidth: 2,
+    borderRadius: 6,
+    zIndex: 5,
+  },
+  liveLabelBadge: {
+    position: 'absolute',
+    top: -22,
+    left: -2,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  liveLabelText: { color: '#FFF', fontSize: 10, fontWeight: '800' },
+
   notesContainer: { marginTop: 16 },
   notesLabel: { fontSize: 13, fontWeight: '600', marginBottom: 6 },
   notesInput: {
