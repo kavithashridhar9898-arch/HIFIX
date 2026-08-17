@@ -7,8 +7,8 @@ let API_BASE_URL;
 if (Platform.OS === 'web') {
   API_BASE_URL = 'http://localhost:5000/api';
 } else {
-  // For native, use your computer's Wi-Fi IP address when running on a physical device
-  API_BASE_URL = 'http://192.168.145.251:5000/api';
+  // Production Railway HTTPS Backend API URL for native iOS/Android
+  API_BASE_URL = 'https://hifix-production.up.railway.app/api';
 }
 
 export const api = axios.create({
