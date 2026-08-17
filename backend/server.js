@@ -2,12 +2,7 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
-let compression;
-try {
-  compression = require('compression');
-} catch (_) {
-  console.warn('⚠️  compression module not loaded, skipping compression middleware');
-}
+const zlib = require('zlib');
 const dotenv = require('dotenv');
 const path = require('path');
 const initializeDatabase = require('./config/dbInit');
@@ -28,17 +23,30 @@ const io = new Server(server, {
   },
 });
 
-// 1. Enable Gzip / Brotli response compression (if available)
-if (compression) {
-  app.use(compression({
-    level: 6,
-    threshold: 512,
-    filter: (req, res) => {
-      if (req.headers['x-no-compression']) return false;
-      return compression.filter(req, res);
+// 1. Enable Gzip response compression using Node's built-in zlib module
+app.use((req, res, next) => {
+  if (req.headers['x-no-compression']) return next();
+  const acceptEncoding = req.headers['accept-encoding'] || '';
+  if (!acceptEncoding.includes('gzip')) return next();
+
+  const originalSend = res.send;
+  res.send = function (body) {
+    if (body && (typeof body === 'string' || Buffer.isBuffer(body)) && body.length > 512) {
+      const buf = Buffer.isBuffer(body) ? body : Buffer.from(body);
+      zlib.gzip(buf, (err, compressed) => {
+        if (!err) {
+          res.setHeader('Content-Encoding', 'gzip');
+          return originalSend.call(this, compressed);
+        }
+        return originalSend.call(this, body);
+      });
+    } else {
+      return originalSend.call(this, body);
     }
-  }));
-}
+  };
+  next();
+});
+
 
 
 // 2. Serve static files with intelligent browser caching headers
