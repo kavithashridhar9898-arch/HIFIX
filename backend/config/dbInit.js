@@ -3,12 +3,16 @@ const pool = require('./database');
 async function initializeDatabase() {
   try {
     const dbName = process.env.DB_NAME || 'hifix_db';
-    await pool.query(`CREATE DATABASE IF NOT EXISTS 
-      ${dbName}
-    CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`);
-    await pool.query(`USE 
-      ${dbName}
-    `);
+    try {
+      await pool.query(`CREATE DATABASE IF NOT EXISTS \`${dbName}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`);
+    } catch (_) {
+      // Cloud managed MySQL (Aiven) pre-creates defaultdb and may restrict global CREATE DATABASE
+    }
+    try {
+      await pool.query(`USE \`${dbName}\``);
+    } catch (_) {
+      // Pool connection is already scoped to DB_NAME
+    }
 
     console.log('✅ Database selected');
 
