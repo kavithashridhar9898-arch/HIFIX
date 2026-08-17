@@ -2,7 +2,12 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
-const compression = require('compression');
+let compression;
+try {
+  compression = require('compression');
+} catch (_) {
+  console.warn('⚠️  compression module not loaded, skipping compression middleware');
+}
 const dotenv = require('dotenv');
 const path = require('path');
 const initializeDatabase = require('./config/dbInit');
@@ -23,15 +28,18 @@ const io = new Server(server, {
   },
 });
 
-// 1. Enable Gzip / Brotli response compression
-app.use(compression({
-  level: 6,
-  threshold: 512,
-  filter: (req, res) => {
-    if (req.headers['x-no-compression']) return false;
-    return compression.filter(req, res);
-  }
-}));
+// 1. Enable Gzip / Brotli response compression (if available)
+if (compression) {
+  app.use(compression({
+    level: 6,
+    threshold: 512,
+    filter: (req, res) => {
+      if (req.headers['x-no-compression']) return false;
+      return compression.filter(req, res);
+    }
+  }));
+}
+
 
 // 2. Serve static files with intelligent browser caching headers
 app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
