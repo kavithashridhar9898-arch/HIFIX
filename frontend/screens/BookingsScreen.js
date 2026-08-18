@@ -10,6 +10,8 @@ import { useTheme } from '../context/ThemeContext';
 import PremiumBackground from '../components/PremiumBackground';
 import { useTabAnimation } from '../context/TabAnimationContext';
 import { formatINRExact } from '../utils/currency';
+import EmptyState from '../components/EmptyState';
+import SkeletonLoader from '../components/SkeletonLoader';
 
 const BookingsScreen = React.memo(function BookingsScreen({ navigation }) {
   const { user } = useAuth();
@@ -181,9 +183,7 @@ const BookingsScreen = React.memo(function BookingsScreen({ navigation }) {
         </View>
 
         {loading ? (
-          <View style={styles.centerContainer}>
-            <ActivityIndicator size="large" color={colors.primary} />
-          </View>
+          <SkeletonLoader count={4} />
         ) : (
           <Animated.FlatList
             data={bookings}
@@ -200,10 +200,13 @@ const BookingsScreen = React.memo(function BookingsScreen({ navigation }) {
               <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
             }
             ListEmptyComponent={
-              <View style={styles.emptyContainer}>
-                <Icon name="calendar-today" size={64} color={`${colors.textSecondary}40`} />
-                <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No bookings found</Text>
-              </View>
+              <EmptyState
+                icon="calendar-today"
+                title="No Bookings Found"
+                message="You don't have any bookings matching this status right now."
+                buttonText={user?.user_type === 'homeowner' ? 'Find Workers' : undefined}
+                onButtonPress={user?.user_type === 'homeowner' ? () => navigation.navigate('Workers') : undefined}
+              />
             }
           />
         )}

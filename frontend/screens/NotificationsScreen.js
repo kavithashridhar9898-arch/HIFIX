@@ -16,6 +16,7 @@ import { useTheme } from '../context/ThemeContext';
 import PremiumBackground from '../components/PremiumBackground';
 import { useNotifications } from '../context/NotificationContext';
 import { formatDistanceToNow } from 'date-fns';
+import EmptyState from '../components/EmptyState';
 
 const NotificationsScreen = React.memo(function NotificationsScreen({ navigation }) {
   const { colors, isDarkMode } = useTheme();
@@ -198,10 +199,11 @@ const NotificationsScreen = React.memo(function NotificationsScreen({ navigation
               <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
             }
             ListEmptyComponent={
-              <View style={styles.emptyContainer}>
-                <Icon name="notifications-none" size={60} color="#555" />
-                <Text style={styles.emptyText}>No notifications yet</Text>
-              </View>
+              <EmptyState
+                icon="notifications-none"
+                title="No Notifications Yet"
+                message="You're all caught up! Updates regarding your bookings and chats will appear here."
+              />
             }
           />
         )}

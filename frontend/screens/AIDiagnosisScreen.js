@@ -229,16 +229,25 @@ export default function AIDiagnosisScreen({ navigation, route }) {
 
   const handleProceedToBooking = () => {
     if (!diagnosisResult) return;
-    const cat = diagnosisResult.category !== 'unknown' ? diagnosisResult.category : null;
+    const cat = diagnosisResult.category && diagnosisResult.category !== 'unknown' ? diagnosisResult.category : 'other';
 
-    navigation.navigate('Workers', {
+    const navParams = {
       serviceType: cat,
       aiDiagnosis: {
         problem: diagnosisResult.problem,
         category: diagnosisResult.category,
         urgency: diagnosisResult.urgency,
       },
-    });
+    };
+
+    try {
+      navigation.navigate('Main', {
+        screen: 'Workers',
+        params: navParams,
+      });
+    } catch (e) {
+      navigation.navigate('Workers', navParams);
+    }
   };
 
   // ── Rendering Helpers ─────────────────────────────────────────────────────

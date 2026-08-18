@@ -47,8 +47,15 @@ const WorkersScreen = React.memo(function WorkersScreen({ route, navigation }) {
       carpenter: 'carpenter',
       handyman: 'handyman',
       hvac: 'hvac',
+      cleaning: 'handyman',
+      cleaner: 'handyman',
+      appliance_repair: 'handyman',
+      ac_repair: 'hvac',
+      pest_control: 'handyman',
+      other: 'handyman',
+      general: 'handyman',
     };
-    return map[v] || null;
+    return map[v] || 'handyman';
   };
 
   const [selectedService, setSelectedService] = useState(toBackendServiceType(initialServiceParam));
@@ -103,7 +110,11 @@ const WorkersScreen = React.memo(function WorkersScreen({ route, navigation }) {
     if (params.searchQuery !== undefined) {
       setSearchQuery(params.searchQuery);
     }
-  }, [params.searchQuery]);
+    if (params.serviceType || params.service) {
+      const targetService = toBackendServiceType(params.serviceType || params.service);
+      setSelectedService(targetService);
+    }
+  }, [params.searchQuery, params.serviceType, params.service]);
 
   // Load saved preferences on mount
   useEffect(() => {
