@@ -195,7 +195,8 @@ const EditProfileScreen = React.memo(function EditProfileScreen({ navigation }) 
         <Text style={[styles.headerTitle, { color: colors.text }]}>Edit Profile</Text>
       </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+        <ScrollView style={styles.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         <View style={styles.form}>
           {/* Profile Image Section */}
           <View style={styles.imageSection}>
@@ -277,7 +278,8 @@ const EditProfileScreen = React.memo(function EditProfileScreen({ navigation }) 
             )}
           </TouchableOpacity>
         </View>
-      </ScrollView>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   </View>
   );
