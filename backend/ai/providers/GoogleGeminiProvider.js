@@ -94,14 +94,16 @@ class GoogleGeminiProvider extends AIProviderInterface {
    */
   _parseResponse(data) {
     const candidate = data?.candidates?.[0];
-    const content   = candidate?.content?.parts?.[0]?.text ?? '';
+    const content   = (candidate?.content?.parts || [])
+      .filter(p => !p.thought && typeof p.text === 'string')
+      .map(p => p.text).join('');
     const tokenUsage = data?.usageMetadata?.totalTokenCount ?? undefined;
 
     return {
       success:    true,
       content,
       tokenUsage,
-      model:      this._model,
+      model:      data?.modelVersion || this._model,
       provider:   this._name,
       errorCode:  null,
       errorMessage: null,
@@ -114,8 +116,27 @@ class GoogleGeminiProvider extends AIProviderInterface {
    */
   _handleError(err) {
     const status  = err?.response?.status;
-    const apiMsg  = err?.response?.data?.error?.message || err.message;
-    const errCode = GEMINI_ERROR_MAP[status] || 'UNKNOWN_ERROR';
+    const apiErr  = err?.response?.data?.error || {};
+    const apiMsg  = apiErr.message || err.message;
+    let errCode   = GEMINI_ERROR_MAP[status] || 'UNKNOWN_ERROR';
+    let retryAfterSec = null;
+
+    if (!status) {
+      // No HTTP response: timeout/abort vs. plain network failure
+      errCode = (err.code === 'ECONNABORTED' || err.code === 'ERR_CANCELED' || /timeout/i.test(err.message))
+        ? 'TIMEOUT' : 'NETWORK_ERROR';
+    }
+
+    if (status === 429) {
+      const details = Array.isArray(apiErr.details) ? apiErr.details : [];
+      const retryInfo = details.find(d => (d['@type'] || '').includes('RetryInfo'));
+      if (retryInfo?.retryDelay) retryAfterSec = Math.ceil(parseFloat(retryInfo.retryDelay)) || null;
+      const hdr = parseInt(err.response.headers?.['retry-after'], 10);
+      if (!retryAfterSec && !isNaN(hdr)) retryAfterSec = hdr;
+      // RESOURCE_EXHAUSTED with a QuotaFailure / "quota" wording = quota exhausted (daily/minute), not transient
+      const isQuota = details.some(d => (d['@type'] || '').includes('QuotaFailure')) || /quota/i.test(apiMsg);
+      errCode = isQuota ? 'QUOTA_EXCEEDED' : 'RATE_LIMITED';
+    }
 
     return {
       success:      false,
@@ -124,7 +145,8 @@ class GoogleGeminiProvider extends AIProviderInterface {
       model:        this._model,
       provider:     this._name,
       errorCode:    errCode,
-      errorMessage: `Gemini API error (${status || 'network'}): ${apiMsg}`,
+      retryAfterSec,
+      errorMessage: `Gemini API error (${status || err.code || 'network'}): ${apiMsg}`,
     };
   }
 
@@ -134,7 +156,7 @@ class GoogleGeminiProvider extends AIProviderInterface {
   async complete({ systemPrompt, userPrompt, options = {} }) {
     const apiKey  = process.env.AI_API_KEY;
     const model   = options.model || this._model;
-    const url     = `${GEMINI_API_BASE}/models/${model}:generateContent?key=${apiKey}`;
+    const url     = `${GEMINI_API_BASE}/models/${model}:generateContent`;
 
     const body = {
       contents: this._buildContents(systemPrompt, userPrompt),
@@ -146,8 +168,9 @@ class GoogleGeminiProvider extends AIProviderInterface {
 
     try {
       const response = await axios.post(url, body, {
-        timeout: aiConfig.timeoutMs,
-        headers: { 'Content-Type': 'application/json' },
+        timeout: options.timeoutMs || aiConfig.timeoutMs,
+        signal:  options.signal,
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
       });
       return this._parseResponse(response.data);
     } catch (err) {
@@ -160,22 +183,27 @@ class GoogleGeminiProvider extends AIProviderInterface {
    */
   async completeWithVision({ systemPrompt, userPrompt, imageBase64, imageMimeType, options = {} }) {
     const apiKey  = process.env.AI_API_KEY;
-    // Vision requires a vision-capable model. Default to gemini-2.0-flash which supports multimodal.
-    const model   = options.model || this._model;
-    const url     = `${GEMINI_API_BASE}/models/${model}:generateContent?key=${apiKey}`;
+    // Vision requires a vision-capable model (AI_MODEL / AI_VISION_MODEL).
+    const model   = options.model || process.env.AI_VISION_MODEL || this._model;
+    const url     = `${GEMINI_API_BASE}/models/${model}:generateContent`;
 
     const body = {
       contents: this._buildVisionContents(systemPrompt, userPrompt, imageBase64, imageMimeType),
       generationConfig: {
-        maxOutputTokens: options.maxTokens    || aiConfig.maxTokens,
-        temperature:     options.temperature  || aiConfig.temperature,
+        maxOutputTokens:  options.maxTokens    || aiConfig.maxTokens,
+        temperature:      options.temperature  || aiConfig.temperature,
+        // Note: responseMimeType is intentionally omitted for vision requests.
+        // Several Gemini model versions reject it for multimodal inputs and return
+        // INVALID_REQUEST, which is NON_RETRYABLE and silently blocks the OpenRouter
+        // fallback. The system prompt already instructs JSON output.
       },
     };
 
     try {
       const response = await axios.post(url, body, {
-        timeout: aiConfig.timeoutMs,
-        headers: { 'Content-Type': 'application/json' },
+        timeout: options.timeoutMs || aiConfig.timeoutMs,
+        signal:  options.signal,
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
         // Vision requests can be larger — increase limit for multipart payloads
         maxBodyLength: 20 * 1024 * 1024, // 20 MB
         maxContentLength: 20 * 1024 * 1024,

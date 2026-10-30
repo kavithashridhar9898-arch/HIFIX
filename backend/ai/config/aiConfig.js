@@ -55,9 +55,21 @@ const config = Object.freeze({
   temperature:  parseFloat10(process.env.AI_TEMPERATURE, 0.3),
 
   // Timeout and retry
-  timeoutMs:     parseInt10(process.env.AI_TIMEOUT_MS,     30000),
-  maxRetries:    parseInt10(process.env.AI_MAX_RETRIES,    3),
-  retryDelayMs:  parseInt10(process.env.AI_RETRY_DELAY_MS, 1000),
+  // Per-attempt provider timeout. Kept well below the mobile client timeout.
+  timeoutMs:     parseInt10(process.env.AI_TIMEOUT_MS,     25000),
+  // Retries apply ONLY to transient failures (network / 5xx), never to quota/auth.
+  maxRetries:    parseInt10(process.env.AI_MAX_RETRIES,    1),
+  retryDelayMs:  parseInt10(process.env.AI_RETRY_DELAY_MS, 800),
+  // Hard ceiling for the entire request across all providers/fallbacks.
+  // Formula: (AI_TIMEOUT_MS × 2 candidates) + OR_timeout(15s) + buffer = ~55s
+  // Must stay below Railway's 60s idle and the frontend's 65s abort.
+  requestDeadlineMs: parseInt10(process.env.AI_REQUEST_DEADLINE_MS, 55000),
+
+  // Fallback chain
+  // Secondary Gemini model tried when the primary times out / is quota-exhausted.
+  fallbackModel: process.env.AI_FALLBACK_MODEL || 'gemini-flash-lite-latest',
+  // Optional OpenRouter free vision fallback (enabled when OPENROUTER_API_KEY is set).
+  openRouterEnabled: parseBool(process.env.AI_OPENROUTER_FALLBACK, true) && Boolean(process.env.OPENROUTER_API_KEY),
 
   // Rate limiting (requests per window per user)
   rateLimitUser:     parseInt10(process.env.AI_RATE_LIMIT_USER,    10),
@@ -78,7 +90,7 @@ const config = Object.freeze({
   logLevel: process.env.AI_LOG_LEVEL || 'info',
 
   // Supported providers (for validation in provider factory)
-  supportedProviders: ['google-gemini', 'openai'],
+  supportedProviders: ['google-gemini', 'openai', 'openrouter'],
 });
 
 // ── Startup validation (only when AI is enabled) ─────────────────────────────
