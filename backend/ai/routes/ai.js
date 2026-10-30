@@ -3,23 +3,15 @@
 /**
  * AI Routes
  * ---------
- * Registers all Phase 5.0 AI infrastructure API endpoints.
- * Mounted in server.js as: app.use('/api/ai', require('./ai/routes/ai'))
- * — but ONLY when AI_ENABLED=true (guard in server.js).
- *
- * Phase 5.0 Endpoints:
- *   GET  /api/ai/health        — Public: AI infrastructure health
- *   GET  /api/ai/status        — Auth: AI status for current user
- *   POST /api/ai/image/upload  — Auth + rate limited: image upload (no diagnosis)
- *
- * Future phase endpoints (Phase 5.1+) will be added here.
- * Existing HiFix routes are NOT modified.
+ * Registers all AI infrastructure, image diagnosis, optional OCR, and
+ * maintenance report PDF generation endpoints.
  */
 
 const express    = require('express');
 const multer     = require('multer');
 const path       = require('path');
 const fs         = require('fs');
+const jwt        = require('jsonwebtoken');
 const router     = express.Router();
 
 const aiController  = require('../controllers/aiController');
@@ -27,12 +19,25 @@ const { requireAuth, requireAIEnabled } = require('../middleware/aiAuth');
 const { aiRateLimiter }  = require('../middleware/aiRateLimiter');
 const { validateAIImageUpload, aiImageMulterOptions } = require('../validators/aiImageValidator');
 
-// ── Multer config for AI image uploads ───────────────────────────────────────
-// Separate from existing profile/chat upload configs — does NOT modify them.
+// Non-blocking optional auth for OCR & PDF download routes (e.g. external browser PDF open)
+function optionalAuth(req, res, next) {
+  try {
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.split(' ')[1];
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      if (decoded && decoded.id) {
+        req.user = { id: decoded.id };
+      }
+    }
+  } catch (_) {
+    // Proceed as anonymous / guest for non-protected auxiliary endpoints
+  }
+  return next();
+}
 
 const AI_UPLOAD_DIR = path.join(__dirname, '../../uploads/ai');
 
-// Ensure upload directory exists at route load time
 if (!fs.existsSync(AI_UPLOAD_DIR)) {
   fs.mkdirSync(AI_UPLOAD_DIR, { recursive: true });
 }
@@ -40,66 +45,80 @@ if (!fs.existsSync(AI_UPLOAD_DIR)) {
 const aiStorage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, AI_UPLOAD_DIR),
   filename:    (req, file, cb) => {
-    const timestamp  = Date.now();
-    const userId     = req.user ? req.user.id : 'anon';
-    const ext        = path.extname(file.originalname).toLowerCase();
+    const timestamp = Date.now();
+    const userId    = req.user ? req.user.id : 'anon';
+    const rawExt    = path.extname(file.originalname || '').toLowerCase();
+    const ext       = rawExt || '.jpg';
     cb(null, `ai-${userId}-${timestamp}${ext}`);
   },
 });
 
 const aiUpload = multer({
-  storage:    aiStorage,
+  storage: aiStorage,
   ...aiImageMulterOptions,
 });
+
+// Optional multer wrapper that only invokes multer when Content-Type is multipart/form-data
+function optionalMultipartImage(req, res, next) {
+  const ct = String(req.headers['content-type'] || '').toLowerCase();
+  if (ct.includes('multipart/form-data')) {
+    return aiUpload.single('image')(req, res, next);
+  }
+  return next();
+}
 
 // ── Route definitions ─────────────────────────────────────────────────────────
 
 /**
  * GET /api/ai/health
  * Public endpoint — no auth required.
- * Returns AI infrastructure operational status.
- * Safe for load balancers, monitoring systems, uptime checks.
  */
 router.get('/health', aiController.health);
 
 /**
  * GET /api/ai/status
  * Authenticated — returns AI feature availability for the current user.
- * Does NOT require AI_ENABLED (user can see "disabled" status).
  */
 router.get('/status', requireAuth, aiController.status);
 
 /**
  * POST /api/ai/image/upload
  * Authenticated + AI-enabled required + image rate limiting.
- *
- * Phase 5.0: Upload and validate only.
- * Field name: "image" (single file)
  */
 router.post(
   '/image/upload',
-  requireAuth,           // Must be authenticated
-  requireAIEnabled,      // AI must be enabled
-  aiRateLimiter({ isImage: true }), // Image-specific rate limit
-  aiUpload.single('image'),         // multer processes the file
-  validateAIImageUpload,            // Validate metadata fields
+  requireAuth,
+  requireAIEnabled,
+  aiRateLimiter({ isImage: true }),
+  aiUpload.single('image'),
+  validateAIImageUpload,
   aiController.uploadImage
+);
+
+/**
+ * POST /api/ai/image-ocr
+ * Optional non-blocking text/label reading from uploaded photograph.
+ */
+router.post(
+  '/image-ocr',
+  optionalAuth,
+  requireAIEnabled,
+  optionalMultipartImage,
+  aiController.extractImageText
 );
 
 /**
  * POST /api/ai/image-diagnosis
  * Authenticated + AI-enabled required + image rate limiting.
- *
- * Phase 5.1: AI Image Diagnosis endpoint.
- * Accepts image upload, performs vision AI analysis via AIGateway & AIImageDiagnosisService,
- * returns structured diagnosis with INR indicative pricing and safety alerts.
+ * Accepts multipart image or base64 payload, runs Gemini Vision (with OpenRouter fallback),
+ * and returns the validated 19-section maintenance report.
  */
 router.post(
   '/image-diagnosis',
   requireAuth,
   requireAIEnabled,
   aiRateLimiter({ isImage: true }),
-  aiUpload.single('image'),
+  optionalMultipartImage,
   validateAIImageUpload,
   aiController.diagnoseImage
 );
@@ -110,14 +129,33 @@ router.post(
   requireAuth,
   requireAIEnabled,
   aiRateLimiter({ isImage: true }),
-  aiUpload.single('image'),
+  optionalMultipartImage,
   validateAIImageUpload,
   aiController.diagnoseImage
 );
 
+/**
+ * POST /api/ai/report/pdf
+ * Generates and downloads (or returns JSON metadata for) the consultancy-grade
+ * maintenance report PDF from validated report data.
+ */
+router.post(
+  '/report/pdf',
+  optionalAuth,
+  aiController.generateReportPdf
+);
+
+/**
+ * GET /api/ai/report/pdf/:reportReference
+ * Direct download of a recently generated report PDF by reference.
+ */
+router.get(
+  '/report/pdf/:reportReference',
+  optionalAuth,
+  aiController.generateReportPdf
+);
+
 // ── Multer error handler (image upload specific) ──────────────────────────────
-// Handles multer-thrown errors (wrong type, too large) gracefully.
-// Must be declared AFTER the routes it covers.
 router.use((err, req, res, next) => {
   if (err && err.code === 'LIMIT_FILE_SIZE') {
     return res.status(400).json({
@@ -131,7 +169,6 @@ router.use((err, req, res, next) => {
       message: err.message,
     });
   }
-  // Pass non-AI errors to the global error handler
   next(err);
 });
 

@@ -24,6 +24,7 @@ const AIProviderInterface = require('./AIProviderInterface');
 const PROVIDER_REGISTRY = {
   'google-gemini': () => require('./GoogleGeminiProvider'),
   'openai':        () => require('./OpenAIProvider'),
+  'openrouter':    () => require('./OpenRouterProvider'),
 };
 
 // Singleton cache — one provider instance per process lifetime.
@@ -81,4 +82,22 @@ function getRegisteredProviders() {
   return Object.keys(PROVIDER_REGISTRY);
 }
 
-module.exports = { createProvider, getRegisteredProviders, _resetProviderForTesting };
+const _namedInstances = new Map();
+
+/**
+ * Get (cached) instance of a specific registered provider by name.
+ * Used by the gateway's fallback chain. Returns null if not registered.
+ * @param {string} name
+ * @returns {AIProviderInterface|null}
+ */
+function createProviderByName(name) {
+  if (_namedInstances.has(name)) return _namedInstances.get(name);
+  const factory = PROVIDER_REGISTRY[name];
+  if (!factory) return null;
+  const ProviderClass = factory();
+  const instance = new ProviderClass();
+  _namedInstances.set(name, instance);
+  return instance;
+}
+
+module.exports = { createProvider, createProviderByName, getRegisteredProviders, _resetProviderForTesting };

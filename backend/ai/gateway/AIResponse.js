@@ -71,7 +71,7 @@ class AIResponse {
    * @param {number}   [params.latencyMs]   - Latency if measurable
    * @returns {object}
    */
-  static failure({ requestId, feature, errorCategory, errorMessage, model = 'unknown', provider = 'unknown', latencyMs = 0 }) {
+  static failure({ requestId, feature, errorCategory, errorMessage, model = 'unknown', provider = 'unknown', latencyMs = 0, retryAfterSec = null, attempts = null }) {
     return {
       success:    false,
       requestId,
@@ -86,6 +86,8 @@ class AIResponse {
       error: {
         category: errorCategory,
         message:  errorMessage,
+        retryAfterSec,
+        attempts,
       },
     };
   }
@@ -138,6 +140,8 @@ const AI_ERROR_CATEGORIES = Object.freeze({
   MODEL_NOT_FOUND:     'MODEL_NOT_FOUND',
   QUOTA_EXCEEDED:      'QUOTA_EXCEEDED',
   INVALID_RESPONSE:    'INVALID_RESPONSE',
+  NETWORK_ERROR:       'NETWORK_ERROR',
+  NO_COMPATIBLE_PROVIDER: 'NO_COMPATIBLE_PROVIDER',
   UNKNOWN_ERROR:       'UNKNOWN_ERROR',
 });
 

@@ -6,7 +6,7 @@
  * Concrete implementation of AIProviderInterface for Google Gemini REST API.
  * Uses axios (already installed in the project) for HTTP requests.
  *
- * API key is read directly from process.env.AI_API_KEY at call time —
+ * API key is read directly from process.env.AI_API_KEY (or GEMINI_API_KEY) at call time —
  * it is NEVER stored in an instance variable to prevent accidental logging.
  *
  * Handles Gemini-specific error codes and maps them to the standardized
@@ -19,7 +19,7 @@ const axios = require('axios');
 const AIProviderInterface = require('./AIProviderInterface');
 const aiConfig = require('../config/aiConfig');
 
-// Gemini API base URL (v1beta supports all current models including gemini-2.0-flash)
+// Gemini API base URL (v1beta supports all current models including gemini-2.0-flash and gemini-flash-latest)
 const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta';
 
 // Map Gemini HTTP status codes to standardized error categories.
@@ -44,15 +44,44 @@ class GoogleGeminiProvider extends AIProviderInterface {
   getModel() { return this._model; }
 
   /**
+   * Resolve the Gemini API key at call time without storing it on the instance.
+   * @private
+   */
+  _getApiKey() {
+    return (
+      process.env.AI_API_KEY ||
+      process.env.GEMINI_API_KEY ||
+      process.env.GOOGLE_API_KEY ||
+      ''
+    ).trim();
+  }
+
+  /**
+   * Normalize MIME type and base64 data for Gemini inline_data.
+   * Properly handles JPEG, PNG, and WebP inputs.
+   * @private
+   */
+  _normalizeVisionInput(imageBase64, imageMimeType) {
+    let mime = String(imageMimeType || 'image/jpeg').toLowerCase().trim();
+    if (mime === 'image/jpg' || mime === 'jpg' || mime === 'jpeg') mime = 'image/jpeg';
+    else if (mime === 'png') mime = 'image/png';
+    else if (mime === 'webp') mime = 'image/webp';
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(mime)) {
+      mime = 'image/jpeg';
+    }
+    const cleanBase64 = String(imageBase64 || '')
+      .replace(/^data:image\/[a-zA-Z0-9.+-]+;base64,/, '')
+      .trim();
+    return { mime, cleanBase64 };
+  }
+
+  /**
    * Build the contents array for Gemini's generateContent request.
    * @private
    */
   _buildContents(systemPrompt, userPrompt) {
     const contents = [];
 
-    // Gemini uses "user" role for the user message.
-    // System prompt is passed as the first turn or as system_instruction.
-    // We combine them into a single user message for compatibility across model versions.
     const combinedPrompt = systemPrompt
       ? `${systemPrompt}\n\n---\n\n${userPrompt}`
       : userPrompt;
@@ -73,14 +102,15 @@ class GoogleGeminiProvider extends AIProviderInterface {
     const combinedPrompt = systemPrompt
       ? `${systemPrompt}\n\n---\n\n${userPrompt}`
       : userPrompt;
+    const { mime, cleanBase64 } = this._normalizeVisionInput(imageBase64, imageMimeType);
 
     return [{
       role: 'user',
       parts: [
         {
           inline_data: {
-            mime_type: imageMimeType || 'image/jpeg',
-            data: imageBase64,
+            mime_type: mime,
+            data: cleanBase64,
           },
         },
         { text: combinedPrompt },
@@ -127,6 +157,10 @@ class GoogleGeminiProvider extends AIProviderInterface {
         ? 'TIMEOUT' : 'NETWORK_ERROR';
     }
 
+    if (status === 400 && /API key not valid|API_KEY_INVALID/i.test(apiMsg)) {
+      errCode = 'AUTH_FAILURE';
+    }
+
     if (status === 429) {
       const details = Array.isArray(apiErr.details) ? apiErr.details : [];
       const retryInfo = details.find(d => (d['@type'] || '').includes('RetryInfo'));
@@ -154,15 +188,28 @@ class GoogleGeminiProvider extends AIProviderInterface {
    * Text-only completion via Gemini generateContent.
    */
   async complete({ systemPrompt, userPrompt, options = {} }) {
-    const apiKey  = process.env.AI_API_KEY;
+    const apiKey  = this._getApiKey();
     const model   = options.model || this._model;
     const url     = `${GEMINI_API_BASE}/models/${model}:generateContent`;
+
+    if (!apiKey || apiKey === 'your_gemini_api_key_here') {
+      return {
+        success:      false,
+        content:      '',
+        tokenUsage:   undefined,
+        model,
+        provider:     this._name,
+        errorCode:    'AUTH_FAILURE',
+        retryAfterSec: null,
+        errorMessage: 'Gemini API key is not configured',
+      };
+    }
 
     const body = {
       contents: this._buildContents(systemPrompt, userPrompt),
       generationConfig: {
-        maxOutputTokens: options.maxTokens    || aiConfig.maxTokens,
-        temperature:     options.temperature  || aiConfig.temperature,
+        maxOutputTokens: Math.max(options.maxTokens || aiConfig.maxTokens, 2048),
+        temperature:     options.temperature ?? aiConfig.temperature,
       },
     };
 
@@ -182,20 +229,29 @@ class GoogleGeminiProvider extends AIProviderInterface {
    * Vision (image + text) completion via Gemini multimodal generateContent.
    */
   async completeWithVision({ systemPrompt, userPrompt, imageBase64, imageMimeType, options = {} }) {
-    const apiKey  = process.env.AI_API_KEY;
-    // Vision requires a vision-capable model (AI_MODEL / AI_VISION_MODEL).
+    const apiKey  = this._getApiKey();
     const model   = options.model || process.env.AI_VISION_MODEL || this._model;
     const url     = `${GEMINI_API_BASE}/models/${model}:generateContent`;
+
+    if (!apiKey || apiKey === 'your_gemini_api_key_here') {
+      return {
+        success:      false,
+        content:      '',
+        tokenUsage:   undefined,
+        model,
+        provider:     this._name,
+        errorCode:    'AUTH_FAILURE',
+        retryAfterSec: null,
+        errorMessage: 'Gemini API key is not configured',
+      };
+    }
 
     const body = {
       contents: this._buildVisionContents(systemPrompt, userPrompt, imageBase64, imageMimeType),
       generationConfig: {
-        maxOutputTokens:  options.maxTokens    || aiConfig.maxTokens,
-        temperature:      options.temperature  || aiConfig.temperature,
-        // Note: responseMimeType is intentionally omitted for vision requests.
-        // Several Gemini model versions reject it for multimodal inputs and return
-        // INVALID_REQUEST, which is NON_RETRYABLE and silently blocks the OpenRouter
-        // fallback. The system prompt already instructs JSON output.
+        // Ensure ample token budget for full 19-section technical maintenance reports
+        maxOutputTokens: Math.max(options.maxTokens || aiConfig.maxTokens, 3500),
+        temperature:     options.temperature ?? aiConfig.temperature,
       },
     };
 
@@ -204,7 +260,6 @@ class GoogleGeminiProvider extends AIProviderInterface {
         timeout: options.timeoutMs || aiConfig.timeoutMs,
         signal:  options.signal,
         headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
-        // Vision requests can be larger — increase limit for multipart payloads
         maxBodyLength: 20 * 1024 * 1024, // 20 MB
         maxContentLength: 20 * 1024 * 1024,
       });
@@ -219,10 +274,10 @@ class GoogleGeminiProvider extends AIProviderInterface {
    * Does NOT make an API call (avoids cost/latency on health checks).
    */
   async isAvailable() {
-    const apiKey = process.env.AI_API_KEY;
+    const apiKey = this._getApiKey();
     return (
       typeof apiKey === 'string' &&
-      apiKey.trim().length > 0 &&
+      apiKey.length > 0 &&
       apiKey !== 'your_gemini_api_key_here'
     );
   }

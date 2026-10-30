@@ -3,22 +3,12 @@
 /**
  * AI Controller
  * -------------
- * Thin Express controller layer for AI infrastructure endpoints.
- * Delegates all business logic to AIGateway — controllers contain
- * ZERO provider-specific code.
- *
- * Phase 5.0 Endpoints:
- *   GET  /api/ai/health       — Infrastructure health check (no auth required)
- *   GET  /api/ai/status       — User-facing AI status (authenticated)
- *   POST /api/ai/image/upload — Secure image upload (authenticated, no diagnosis)
- *
- * Note:
- *   - Admin usage stats endpoint is deferred (per modification #3).
- *   - Feature endpoints (diagnosis, recommendation, etc.) are deferred to Phase 5.1+.
- *   - Existing HiFix response convention: { success, message, data }
+ * Thin Express controller layer for AI infrastructure, image diagnosis,
+ * optional OCR text extraction, 19-section report generation, and PDF export.
  */
 
 const path              = require('path');
+const fs                = require('fs');
 const { validationResult } = require('express-validator');
 const AIGateway         = require('../gateway/AIGateway');
 const { promptRegistry } = require('../prompts/promptRegistry');
@@ -26,14 +16,11 @@ const AICache           = require('../cache/AICache');
 const aiConfig          = require('../config/aiConfig');
 const { validateImageFile, scheduleCleanup, deleteImageNow } = require('../utils/imageSanitizer');
 const aiLogger          = require('../utils/aiLogger');
+const AIImageDiagnosisService = require('../services/AIImageDiagnosisService');
+const AIMaintenanceReportPdfService = require('../services/AIMaintenanceReportPdfService');
 
 // ── Health Check ──────────────────────────────────────────────────────────────
 
-/**
- * GET /api/ai/health
- * Public endpoint — returns infrastructure status without exposing internals.
- * Safe to call from monitoring systems without authentication.
- */
 exports.health = async (req, res) => {
   try {
     const health = await AIGateway.health();
@@ -42,19 +29,18 @@ exports.health = async (req, res) => {
       success: true,
       message: 'AI infrastructure health check',
       data: {
-        status:          health.aiEnabled ? 'operational' : 'disabled',
-        aiEnabled:       health.aiEnabled,
-        cacheEnabled:    health.cacheEnabled,
-        provider:        health.provider,
-        model:           health.model,
-        providerAvailable: health.providerAvailable,
+        status:             health.aiEnabled ? 'operational' : 'disabled',
+        aiEnabled:          health.aiEnabled,
+        cacheEnabled:       health.cacheEnabled,
+        provider:           health.provider,
+        model:              health.model,
+        providerAvailable:  health.providerAvailable,
         registeredFeatures: promptRegistry.list().length,
-        cacheL1Size:     AICache.l1Size(),
-        timestamp:       new Date().toISOString(),
+        cacheL1Size:        AICache.l1Size(),
+        timestamp:          new Date().toISOString(),
       },
     });
   } catch (err) {
-    // Health check must never crash
     return res.status(200).json({
       success: true,
       message: 'AI infrastructure health check',
@@ -70,11 +56,6 @@ exports.health = async (req, res) => {
 
 // ── User Status ───────────────────────────────────────────────────────────────
 
-/**
- * GET /api/ai/status
- * Authenticated — returns AI availability status for the current user.
- * Does not require AI_ENABLED=true (user can see "disabled" status).
- */
 exports.status = async (req, res) => {
   try {
     const features = promptRegistry.list();
@@ -83,14 +64,14 @@ exports.status = async (req, res) => {
       success: true,
       message: 'AI status retrieved',
       data: {
-        aiEnabled:    aiConfig.enabled,
-        features:     features.map(f => ({
+        aiEnabled: aiConfig.enabled,
+        features:  features.map(f => ({
           id:          f.id,
           description: f.description,
           status:      f.status,
           available:   aiConfig.enabled && f.status === 'active',
         })),
-        userRole:     req.user.user_type,
+        userRole:  req.user.user_type,
       },
     });
   } catch (err) {
@@ -101,22 +82,11 @@ exports.status = async (req, res) => {
   }
 };
 
-const AIImageDiagnosisService = require('../services/AIImageDiagnosisService');
-
 // ── Image Upload (Infrastructure Only) ────────────────────────────────────────
 
-/**
- * POST /api/ai/image/upload
- * Authenticated + rate limited.
- *
- * Phase 5.0: Accepts, validates, and stores the image securely.
- * Returns the upload receipt. Does NOT perform any AI diagnosis.
- */
 exports.uploadImage = async (req, res) => {
-  // Validate any metadata fields
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    // Clean up uploaded file on validation failure
     if (req.file) deleteImageNow(req.file.path);
     return res.status(400).json({
       success: false,
@@ -125,7 +95,6 @@ exports.uploadImage = async (req, res) => {
     });
   }
 
-  // Multer may have rejected the file already (wrong type / too large)
   if (!req.file) {
     return res.status(400).json({
       success: false,
@@ -133,7 +102,6 @@ exports.uploadImage = async (req, res) => {
     });
   }
 
-  // Application-level file validation (in addition to multer)
   const { valid, error: validationError } = validateImageFile(req.file);
   if (!valid) {
     deleteImageNow(req.file.path);
@@ -143,18 +111,17 @@ exports.uploadImage = async (req, res) => {
     });
   }
 
-  // Schedule automatic cleanup of the temporary file
   scheduleCleanup(req.file.path);
 
   const context         = req.body.context || null;
   const serviceTypeHint = req.body.serviceTypeHint || null;
 
   aiLogger.info({
-    requestId:  req.aiRequestId,
-    feature:    'IMAGE_UPLOAD',
-    userId:     req.user ? req.user.id : null,
-    status:     'uploaded',
-    message:    'AI image upload received and validated',
+    requestId: req.aiRequestId,
+    feature:   'IMAGE_UPLOAD',
+    userId:    req.user ? req.user.id : null,
+    status:    'uploaded',
+    message:   'AI image upload received and validated',
   });
 
   return res.status(201).json({
@@ -173,15 +140,78 @@ exports.uploadImage = async (req, res) => {
   });
 };
 
-// ── AI Image Diagnosis (Phase 5.1) ───────────────────────────────────────────
+// ── Optional Image Text / Label Extraction (Phase 3 OCR) ─────────────────────
 
-/**
- * POST /api/ai/image-diagnosis
- * Authenticated + Rate Limited (Image Tier)
- *
- * Receives an image upload, runs AI vision diagnosis via AIImageDiagnosisService & AIGateway,
- * validates and normalizes output, returns safe preliminary diagnosis with INR costs.
- */
+exports.extractImageText = async (req, res) => {
+  try {
+    const hasFile = Boolean(req.file);
+    const rawBase64 = typeof req.body?.imageBase64 === 'string' && req.body.imageBase64.trim().length > 0
+      ? req.body.imageBase64.trim()
+      : null;
+
+    if (!hasFile && !rawBase64) {
+      return res.status(400).json({
+        success: false,
+        message: 'No image provided for text extraction.',
+      });
+    }
+
+    const result = await AIImageDiagnosisService.extractText({
+      filePath:    req.file ? req.file.path : null,
+      mimeType:    req.file ? req.file.mimetype : (req.body.imageMimeType || 'image/jpeg'),
+      imageBase64: rawBase64,
+      userId:      req.user ? req.user.id : null,
+    });
+
+    if (!result.success) {
+      return res.status(400).json({
+        success: false,
+        message: result.error?.message || 'Unable to extract text from image.',
+        code:    result.error?.category || 'OCR_FAILED',
+      });
+    }
+
+    const summaryNote =
+      result.data?.equipmentSummary ||
+      (result.data?.hasReadableText
+        ? 'Readable equipment text/labels extracted. You may review or edit below.'
+        : 'No readable text or equipment rating plate detected in the photograph. You may proceed directly to report generation.');
+
+    const payload = {
+      ...result.data,
+      summaryNote,
+    };
+
+    return res.json({
+      success: true,
+      message: 'Image text extraction completed',
+      data: {
+        ...payload,
+        ocr: payload,
+      },
+    });
+  } catch (err) {
+    if (req.file) deleteImageNow(req.file.path);
+    const fallbackOcr = {
+      hasReadableText: false,
+      extractedText: '',
+      detectedLabels: [],
+      ocrUnavailable: true,
+      summaryNote: 'Optional text extraction skipped; you may proceed directly to report generation.',
+    };
+    return res.status(200).json({
+      success: true,
+      message: 'Optional text extraction skipped',
+      data: {
+        ...fallbackOcr,
+        ocr: fallbackOcr,
+      },
+    });
+  }
+};
+
+// ── AI Image Diagnosis & Full 19-Section Report Generation ───────────────────
+
 exports.diagnoseImage = async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -194,17 +224,24 @@ exports.diagnoseImage = async (req, res) => {
       });
     }
 
-    if (!req.file) {
+    const rawBase64 = typeof req.body?.imageBase64 === 'string' && req.body.imageBase64.trim().length > 0
+      ? req.body.imageBase64.trim()
+      : null;
+
+    if (!req.file && !rawBase64) {
       return res.status(400).json({
         success: false,
         message: 'No image file provided. Please attach an image under field name "image".',
       });
     }
 
-    const serviceContext  = req.body.serviceContext || req.body.context || '';
-    const locationContext = req.body.locationContext || '';
+    const serviceContext       = req.body.serviceContext || req.body.context || req.body.contextNotes || '';
+    const locationContext      = req.body.locationContext || '';
+    const propertyType         = req.body.propertyType || '';
+    const affectedArea         = req.body.affectedArea || '';
+    const extractedText        = req.body.extractedText || '';
+    const previousObservations = req.body.previousObservations || '';
 
-    // Mock test mode parameter (passed in header or body during test runner)
     let mockResult = null;
     if (req.headers['x-ai-mock-diagnosis']) {
       try {
@@ -219,32 +256,54 @@ exports.diagnoseImage = async (req, res) => {
     }
 
     const result = await AIImageDiagnosisService.diagnose({
-      filePath:        req.file.path,
-      mimeType:        req.file.mimetype,
-      userId:          req.user ? req.user.id : null,
+      filePath:             req.file ? req.file.path : null,
+      mimeType:             req.file ? req.file.mimetype : (req.body.imageMimeType || 'image/jpeg'),
+      imageBase64:          rawBase64,
+      userId:               req.user ? req.user.id : null,
       serviceContext,
       locationContext,
+      propertyType,
+      affectedArea,
+      extractedText,
+      previousObservations,
       mockResult,
     });
 
     if (!result.success) {
-      const errCategory = result.error?.category;
-      let statusCode = 400;
-      if (errCategory === 'RATE_LIMITED') statusCode = 429;
-      else if (errCategory === 'AI_DISABLED' || errCategory === 'PROVIDER_UNAVAILABLE') statusCode = 503;
-      else if (errCategory === 'TIMEOUT') statusCode = 504;
+      const errCategory = result.error?.category || 'DIAGNOSIS_FAILED';
+      const STATUS = {
+        QUOTA_EXCEEDED: 503, RATE_LIMITED: 429, AI_DISABLED: 503, PROVIDER_UNAVAILABLE: 503,
+        NO_COMPATIBLE_PROVIDER: 503, TIMEOUT: 504, NETWORK_ERROR: 502, PROVIDER_ERROR: 502,
+        INVALID_RESPONSE: 502, AUTH_FAILURE: 503, MODEL_NOT_FOUND: 503,
+        INVALID_IMAGE: 400, INVALID_REQUEST: 400, SERVICE_ERROR: 500,
+      };
+      const MESSAGES = {
+        QUOTA_EXCEEDED: 'AI diagnosis quota is temporarily exhausted.',
+        RATE_LIMITED:   'AI diagnosis is busy. Please try again shortly.',
+        TIMEOUT:        'AI diagnosis took too long to respond. Please try again shortly.',
+        NETWORK_ERROR:  'The AI service could not be reached. Please try again shortly.',
+        INVALID_IMAGE:  result.error?.message,
+        INVALID_REQUEST:'The image could not be analysed. Try a clearer JPEG or PNG photo.',
+      };
+      const attempts = result.error?.attempts || {};
+      const retryAfterSec = result.error?.retryAfterSec ?? null;
+      if (retryAfterSec) res.set('Retry-After', String(retryAfterSec));
 
-      return res.status(statusCode).json({
+      return res.status(STATUS[errCategory] || 502).json({
         success: false,
-        message: result.error?.message || 'AI diagnosis failed',
-        code:    errCategory || 'DIAGNOSIS_FAILED',
+        message: MESSAGES[errCategory] || 'AI diagnosis is currently unavailable.',
+        code:    errCategory,
+        retryAfterSec,
+        primaryQuotaExhausted: Boolean(attempts.primaryQuotaExhausted),
+        alternativeConfigured: Boolean(attempts.alternativeConfigured),
+        alternativeOutcome:    attempts.alternativeOutcome || null,
         requestId: result.requestId,
       });
     }
 
     return res.json({
       success: true,
-      message: 'AI diagnosis completed successfully',
+      message: 'AI diagnosis and maintenance report completed successfully',
       data:    result.data,
     });
 
@@ -258,3 +317,72 @@ exports.diagnoseImage = async (req, res) => {
   }
 };
 
+// ── PDF Report Generation & Download (Phase 8) ───────────────────────────────
+
+exports.generateReportPdf = async (req, res) => {
+  try {
+    const reportRefParam = req.params?.reportReference || req.body?.reportReference || req.body?.requestId || null;
+    const stored = reportRefParam ? AIImageDiagnosisService.getStoredReport(reportRefParam) : null;
+
+    const reportPayload = req.body?.report || req.body?.diagnosis || stored?.report || stored?.diagnosis || null;
+    if (!reportPayload || typeof reportPayload !== 'object') {
+      return res.status(400).json({
+        success: false,
+        message: 'Valid report data or reportReference is required to generate a PDF.',
+      });
+    }
+
+    const imageBase64   = req.body?.imageBase64 || stored?.imageBase64 || null;
+    const imageMimeType = req.body?.imageMimeType || stored?.mimeType || 'image/jpeg';
+
+    const pdfBuffer = await AIMaintenanceReportPdfService.generateReportPdf({
+      report: reportPayload,
+      imageBase64,
+      imageMimeType,
+    });
+
+    const refClean = String(
+      reportPayload.reportReference ||
+      reportPayload.report?.reportReference ||
+      reportRefParam ||
+      `HFX-RPT-${Date.now()}`
+    ).replace(/[^a-zA-Z0-9_-]/g, '');
+    const filename = `${refClean}.pdf`;
+
+    // Persist a temporary downloadable copy in uploads/ai/reports for mobile link/share support
+    const reportsDir = path.join(__dirname, '../../uploads/ai/reports');
+    if (!fs.existsSync(reportsDir)) {
+      fs.mkdirSync(reportsDir, { recursive: true });
+    }
+    const pdfFilePath = path.join(reportsDir, filename);
+    fs.writeFileSync(pdfFilePath, pdfBuffer);
+    scheduleCleanup(pdfFilePath, 2 * 60 * 60 * 1000); // 2 hours
+
+    if (req.query?.format === 'json' || req.body?.returnJson === true) {
+      return res.json({
+        success: true,
+        message: 'Maintenance report PDF generated successfully',
+        data: {
+          reportReference: refClean,
+          filename,
+          fileName:        filename,
+          sizeBytes:       pdfBuffer.length,
+          downloadUrl:     `/uploads/ai/reports/${filename}`,
+          apiDownloadUrl:  `/api/ai/report/pdf/${refClean}`,
+          pdfBase64:       pdfBuffer.toString('base64'),
+        },
+      });
+    }
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Length', String(pdfBuffer.length));
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    return res.status(200).end(pdfBuffer);
+  } catch (err) {
+    aiLogger.error({ feature: 'REPORT_PDF', userId: req.user ? req.user.id : null, message: err.message });
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to generate maintenance report PDF.',
+    });
+  }
+};

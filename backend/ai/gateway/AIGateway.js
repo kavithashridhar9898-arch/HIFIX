@@ -21,15 +21,10 @@
  *  12. Structured logging (→ aiLogger)
  *  13. Cache store on success
  *  14. Error isolation — NEVER propagates provider exceptions to callers
- *
- * Architecture:
- *   Controller → AIGateway.request() → Provider → AIResponse
- *                     ↓
- *            AIMonitor + AICache + aiLogger + AIUsageTracker
  */
 
 const aiConfig          = require('../config/aiConfig');
-const { createProvider } = require('../providers/index');
+const { createProvider, createProviderByName } = require('../providers/index');
 const { AIResponse, AI_ERROR_CATEGORIES } = require('./AIResponse');
 const { generateRequestId } = require('../utils/requestId');
 const aiLogger          = require('../utils/aiLogger');
@@ -38,7 +33,6 @@ const AIMonitor         = require('../monitoring/AIMonitor');
 const AIUsageTracker    = require('../monitoring/AIUsageTracker');
 const { promptRegistry } = require('../prompts/promptRegistry');
 const crypto            = require('crypto');
-const { createProviderByName } = require('../providers/index');
 
 // ── Provider cooldowns (circuit breaker) ─────────────────────────────────────
 // key "provider:model" → { until: epochMs, category }
@@ -47,17 +41,14 @@ const _cooldowns = new Map();
 const COOLDOWN_DEFAULTS_SEC = { QUOTA_EXCEEDED: 3600, RATE_LIMITED: 60, TIMEOUT: 300 };
 
 // ── Pre-warm OpenRouter catalogue ─────────────────────────────────────────────
-// Warm the catalogue in the background at startup so the first real request
-// does not eat 8 seconds of deadline fetching the model list.
 setImmediate(() => {
   try {
-    const or = createProviderByName('openrouter');
+    const or = typeof createProviderByName === 'function' ? createProviderByName('openrouter') : null;
     if (or && typeof or._loadCatalogue === 'function') {
       or._loadCatalogue().catch(() => {}); // non-blocking, silent
     }
   } catch (_) {}
 });
-
 
 function cooldownKey(c) { return `${c.provider.getName()}:${c.model || 'default'}`; }
 
@@ -74,8 +65,6 @@ function getCooldown(c) {
 }
 
 // ── Request de-duplication ───────────────────────────────────────────────────
-// In-flight identical requests share one provider call; successful vision
-// results are memoised briefly so a user re-tapping "Analyze" doesn't burn quota.
 const _inFlight = new Map();
 const _recent   = new Map(); // key → { at, response }
 const RECENT_TTL_MS = 10 * 60 * 1000;
@@ -84,14 +73,17 @@ function dedupKey(feature, userPrompt, imageBase64) {
   return crypto.createHash('sha1').update(`${feature}|${userPrompt}|${imageBase64 || ''}`).digest('hex');
 }
 
-// NON_RETRYABLE: these categories stop retries on the SAME candidate (breaks inner loop)
-// and move to the next provider. INVALID_REQUEST is intentionally NOT here so that
-// a Gemini INVALID_REQUEST (e.g. model rejecting responseMimeType for vision) still
-// lets OpenRouter be attempted as the next candidate.
-const NON_RETRYABLE = new Set(['QUOTA_EXCEEDED', 'RATE_LIMITED', 'AUTH_FAILURE', 'MODEL_NOT_FOUND', 'NO_COMPATIBLE_PROVIDER', 'TIMEOUT', 'INVALID_RESPONSE']);
-// Note: INVALID_REQUEST is handled specially — it breaks the inner attempt loop for
-// the current candidate but does NOT stop the outer fallback chain.
-const STOP_CHAIN = new Set(['AUTH_FAILURE', 'NO_COMPATIBLE_PROVIDER']);
+const NON_RETRYABLE = new Set([
+  'QUOTA_EXCEEDED',
+  'RATE_LIMITED',
+  'AUTH_FAILURE',
+  'MODEL_NOT_FOUND',
+  'NO_COMPATIBLE_PROVIDER',
+  'TIMEOUT',
+  'INVALID_RESPONSE',
+]);
+const STOP_CHAIN = new Set(['NO_COMPATIBLE_PROVIDER']);
+const STOP_PROVIDER = new Set(['AUTH_FAILURE']);
 
 // ── Retry helper ──────────────────────────────────────────────────────────────
 
@@ -99,20 +91,12 @@ function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-/**
- * Exponential backoff delay in ms for attempt N (1-based).
- * Attempt 1: retryDelayMs × 1, Attempt 2: × 2, Attempt 3: × 4, …
- */
 function retryDelay(attempt) {
   return aiConfig.retryDelayMs * Math.pow(2, attempt - 1);
 }
 
 // ── Timeout wrapper ───────────────────────────────────────────────────────────
 
-/**
- * Wraps a promise with a hard timeout.
- * Rejects with error category 'TIMEOUT' if the promise does not settle in time.
- */
 function withTimeout(promise, ms) {
   const timeoutPromise = new Promise((_, reject) => {
     const id = setTimeout(() => {
@@ -125,22 +109,42 @@ function withTimeout(promise, ms) {
   return Promise.race([promise, timeoutPromise]);
 }
 
+// ── Robust JSON parser for LLM outputs ───────────────────────────────────────
+
+function parseStructuredJson(rawContent) {
+  if (typeof rawContent !== 'string' || !rawContent.trim()) {
+    throw new Error('Empty output');
+  }
+  const jsonMatch = rawContent.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  let candidate = (jsonMatch ? jsonMatch[1] : rawContent).trim();
+
+  // If there is leading/trailing prose around a JSON object, isolate the outermost {...}
+  if (!candidate.startsWith('{')) {
+    const firstBrace = candidate.indexOf('{');
+    const lastBrace = candidate.lastIndexOf('}');
+    if (firstBrace !== -1 && lastBrace > firstBrace) {
+      candidate = candidate.slice(firstBrace, lastBrace + 1);
+    }
+  }
+
+  try {
+    return JSON.parse(candidate);
+  } catch (_) {
+    // Repair common minor syntax quirks from vision models (`"key"][` -> `"key":[` and trailing commas)
+    const repaired = candidate
+      .replace(/"\s*\]\s*\[/g, '":[')
+      .replace(/,\s*([}\]])/g, '$1');
+    return JSON.parse(repaired);
+  }
+}
+
 // ── Main Gateway ──────────────────────────────────────────────────────────────
 
 const AIGateway = {
 
   /**
    * Primary entry point for ALL AI feature requests.
-   *
-   * @param {object} params
-   * @param {string}   params.feature      - Feature ID from promptRegistry (e.g. 'IMAGE_DIAGNOSIS')
-   * @param {string}   [params.userPrompt] - Dynamic user content to inject into prompt
-   * @param {string}   [params.imageBase64]    - For vision requests
-   * @param {string}   [params.imageMimeType]  - For vision requests
-   * @param {number}   [params.userId]     - Authenticated user ID for tracking
-   * @param {object}   [params.options]    - Per-request overrides (maxTokens, temperature, model)
-   * @param {boolean}  [params.useCache]   - Override cache behaviour (default: aiConfig.cacheEnabled)
-   * @returns {Promise<object>}  Always resolves with an AIResponse — never rejects.
+   * Always resolves with an AIResponse — never rejects.
    */
   async request(params) {
     const key = dedupKey(params.feature, params.userPrompt || '', params.imageBase64);
@@ -216,19 +220,24 @@ const AIGateway = {
     if (primary.getName() === 'google-gemini' && aiConfig.fallbackModel && aiConfig.fallbackModel !== primaryModel) {
       candidates.push({ provider: primary, model: aiConfig.fallbackModel, role: 'primary' });
     }
+
     let alternativeConfigured = false;
-    if (aiConfig.openRouterEnabled && primary.getName() !== 'openrouter') {
-      const or = createProviderByName('openrouter');
-      if (or && await or.isAvailable()) {
-        alternativeConfigured = true;
-        if (isVision) {
-          // Only verified free + image-capable models; never text-only, never paid.
-          const verified = await or.getVerifiedVisionModels();
-          verified.slice(0, 2).forEach(m => candidates.push({ provider: or, model: m, role: 'alternative' }));
-        } else {
-          candidates.push({ provider: or, model: or.getModel(), role: 'alternative' });
+    try {
+      if (aiConfig.openRouterEnabled && primary.getName() !== 'openrouter' && typeof createProviderByName === 'function') {
+        const or = createProviderByName('openrouter');
+        if (or && await or.isAvailable()) {
+          alternativeConfigured = true;
+          if (isVision) {
+            // Only verified free + image-capable models; never text-only, never paid.
+            const verified = await or.getVerifiedVisionModels();
+            verified.forEach(m => candidates.push({ provider: or, model: m, role: 'alternative' }));
+          } else {
+            candidates.push({ provider: or, model: or.getModel(), role: 'alternative' });
+          }
         }
       }
+    } catch (orErr) {
+      aiLogger.warn({ requestId, feature, userId, message: `Alternative provider setup skipped: ${orErr.message}` });
     }
 
     // ── 5. Fallback chain with per-attempt timeout + global deadline ──────
@@ -237,8 +246,21 @@ const AIGateway = {
     let providerResponse = null;
     let result = null;
 
+    const deadProviders = new Set();
+
     chain:
     for (const c of candidates) {
+      if (
+        c.role === 'alternative' &&
+        attempts.length >= 2 &&
+        attempts.every(a => a.role === 'primary' && a.outcome === 'TIMEOUT' && a.latencyMs >= aiConfig.timeoutMs)
+      ) {
+        break chain;
+      }
+      if (deadProviders.has(c.provider.getName())) {
+        attempts.push({ provider: c.provider.getName(), model: c.model, role: c.role, outcome: 'AUTH_FAILURE', skipped: true });
+        continue;
+      }
       const cd = getCooldown(c);
       if (cd) {
         attempts.push({ provider: c.provider.getName(), model: c.model, role: c.role, outcome: cd.category, skipped: true, retryAfterSec: cd.retryAfterSec });
@@ -251,7 +273,11 @@ const AIGateway = {
           attempts.push({ provider: c.provider.getName(), model: c.model, role: c.role, outcome: 'DEADLINE', skipped: true });
           break chain;
         }
-        const perAttemptMs = Math.min(aiConfig.timeoutMs, remaining);
+        // Free OpenRouter vision models (esp. reasoning models) can need >15s; give them
+        // the remaining global deadline instead of the per-attempt cap.
+        const perAttemptMs = (c.role === 'alternative' || c === candidates[candidates.length - 1])
+          ? Math.min(38000, Math.max(1000, remaining - 1000))
+          : Math.min(aiConfig.timeoutMs, remaining);
         const ac = new AbortController();
         const callOptions = { ...promptDef.defaultOptions, ...options, model: c.model, timeoutMs: perAttemptMs, signal: ac.signal };
         const builtPrompt = promptDef.buildUserPrompt ? promptDef.buildUserPrompt(userPrompt) : userPrompt;
@@ -268,11 +294,21 @@ const AIGateway = {
         }
 
         if (resp.success) {
-          // Validate structured output before accepting — a garbled answer falls through to the next provider.
+          // Validate structured output before accepting — a garbled or incomplete answer falls through to the next provider.
           if (promptDef.outputFormat === 'json') {
             try {
-              const jsonMatch = resp.content.match(/```(?:json)?\s*([\s\S]*?)```/);
-              result = JSON.parse(jsonMatch ? jsonMatch[1].trim() : resp.content.trim());
+              result = parseStructuredJson(resp.content);
+              if (
+                !result ||
+                typeof result !== 'object' ||
+                Array.isArray(result) ||
+                (feature === 'IMAGE_DIAGNOSIS' &&
+                  typeof result.hasReadableText !== 'boolean' &&
+                  (typeof result.problem !== 'string' || result.problem.trim().length === 0) &&
+                  (typeof result.reportTitle !== 'string' || result.reportTitle.trim().length === 0))
+              ) {
+                resp = { success: false, errorCode: 'INVALID_RESPONSE', errorMessage: 'Provider returned incomplete JSON output' };
+              }
             } catch (_) {
               resp = { success: false, errorCode: 'INVALID_RESPONSE', errorMessage: 'Provider returned non-JSON output' };
             }
@@ -295,10 +331,10 @@ const AIGateway = {
           setCooldown(c, cat, resp.retryAfterSec);
           if (cat === 'TIMEOUT') AIMonitor.recordTimeout(feature);
         }
-        // AUTH_FAILURE aborts the whole chain; other non-transient errors skip to next candidate
         if (STOP_CHAIN.has(cat)) break chain;
+        if (STOP_PROVIDER.has(cat)) { deadProviders.add(c.provider.getName()); break; }
         if (NON_RETRYABLE.has(cat) || cat === 'INVALID_REQUEST') break;
-        if (attempt <= aiConfig.maxRetries) {    // transient (network / 5xx) → bounded retry
+        if (attempt <= aiConfig.maxRetries) {
           await sleep(Math.min(retryDelay(attempt), Math.max(0, deadline - Date.now() - 2500)));
         }
       }
@@ -382,8 +418,6 @@ const AIGateway = {
 
   /**
    * Health check — returns current gateway and provider status.
-   * Never makes an AI API call. Safe to call frequently.
-   * @returns {Promise<object>}
    */
   async health() {
     const stats = AIMonitor.getStats();
